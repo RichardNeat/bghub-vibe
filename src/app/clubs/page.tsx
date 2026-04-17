@@ -91,30 +91,65 @@ export default function ClubsPage() {
                     className="rounded-xl px-5 py-4 shadow-sm flex flex-col gap-2"
                     style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
-                          {club.name}
-                        </h3>
-                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                          📍 {club.city}
-                        </p>
-                      </div>
-                      {club.website && (
-                        <a
-                          href={club.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-all hover:opacity-80"
-                          style={{ backgroundColor: "var(--accent-light)", color: "var(--accent)" }}
-                        >
-                          Visit →
-                        </a>
-                      )}
+                    <div>
+                      <h3 className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+                        {club.name}
+                      </h3>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                        📍 {club.city}
+                      </p>
                     </div>
                     <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                       {club.description}
                     </p>
+                    {(club.website || club.meetup || club.facebook || club.instagram) && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {club.website && (
+                          <a
+                            href={club.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-all hover:opacity-80"
+                            style={{ backgroundColor: "var(--accent-light)", color: "var(--accent)" }}
+                          >
+                            Website
+                          </a>
+                        )}
+                        {club.meetup && (
+                          <a
+                            href={club.meetup}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-all hover:opacity-80"
+                            style={{ backgroundColor: "var(--purple-light)", color: "var(--purple)" }}
+                          >
+                            Meetup
+                          </a>
+                        )}
+                        {club.facebook && (
+                          <a
+                            href={club.facebook}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-all hover:opacity-80"
+                            style={{ backgroundColor: "color-mix(in srgb, #1877f2 15%, transparent)", color: "#1877f2" }}
+                          >
+                            Facebook
+                          </a>
+                        )}
+                        {club.instagram && (
+                          <a
+                            href={club.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-all hover:opacity-80"
+                            style={{ backgroundColor: "color-mix(in srgb, #e1306c 15%, transparent)", color: "#e1306c" }}
+                          >
+                            Instagram
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
