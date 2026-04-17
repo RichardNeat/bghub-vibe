@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { addGame, removeGame } from "@/lib/actions";
+import { addGame, removeGame, toggleGameVote } from "@/lib/actions";
 
 type Game = {
   id: string;
   name: string;
   userId: string;
   user: { id: string; name: string | null };
+  voteCount: number;
+  hasVoted: boolean;
 };
 
 type Props = {
@@ -19,7 +21,7 @@ type Props = {
 
 export function GamesSection({ eventId, games, userId, isPast }: Props) {
   const [filter, setFilter] = useState<"all" | "mine">("all");
-  const [sortBy, setSortBy] = useState<"added" | "game" | "user">("added");
+  const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes">("added");
 
   const addGameWithId = addGame.bind(null, eventId);
 
@@ -28,6 +30,7 @@ export function GamesSection({ eventId, games, userId, isPast }: Props) {
     .sort((a, b) => {
       if (sortBy === "game") return a.name.localeCompare(b.name);
       if (sortBy === "user") return (a.user.name ?? "").localeCompare(b.user.name ?? "");
+      if (sortBy === "votes") return b.voteCount - a.voteCount;
       return 0;
     });
 
@@ -74,6 +77,7 @@ export function GamesSection({ eventId, games, userId, isPast }: Props) {
               style={{ border: "1px solid var(--border)" }}
             >
               <option value="added">Order added</option>
+              <option value="votes">Most voted</option>
               <option value="game">Sort A–Z</option>
               <option value="user">Sort by person</option>
             </select>
@@ -112,17 +116,40 @@ export function GamesSection({ eventId, games, userId, isPast }: Props) {
                     )}
                   </span>
                 </div>
-                {!isPast && g.userId === userId && (
-                  <form action={removeGame.bind(null, g.id, eventId)} className="shrink-0">
-                    <button
-                      type="submit"
-                      className="text-xs font-medium transition-colors hover:underline"
-                      style={{ color: "var(--danger)" }}
-                    >
-                      Remove
-                    </button>
-                  </form>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {!isPast && (
+                    <form action={toggleGameVote.bind(null, g.id, eventId)}>
+                      <button
+                        type="submit"
+                        className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-all hover:opacity-80"
+                        style={
+                          g.hasVoted
+                            ? { backgroundColor: "var(--accent)", color: "#fff" }
+                            : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }
+                        }
+                      >
+                        ▲ {g.voteCount > 0 ? g.voteCount : ""}
+                      </button>
+                    </form>
+                  )}
+                  {isPast && g.voteCount > 0 && (
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full"
+                      style={{ backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}>
+                      ▲ {g.voteCount}
+                    </span>
+                  )}
+                  {!isPast && g.userId === userId && (
+                    <form action={removeGame.bind(null, g.id, eventId)}>
+                      <button
+                        type="submit"
+                        className="text-xs font-medium transition-colors hover:underline"
+                        style={{ color: "var(--danger)" }}
+                      >
+                        Remove
+                      </button>
+                    </form>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

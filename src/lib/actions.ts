@@ -37,6 +37,29 @@ export async function createEvent(formData: FormData) {
   redirect(`/events/${event.id}`);
 }
 
+export async function updateEvent(eventId: string, formData: FormData) {
+  const user = await requireUser();
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!event || event.creatorId !== user.id || event.date < new Date()) return;
+
+  const name = (formData.get("name") as string)?.trim();
+  const date = formData.get("date") as string;
+  const description = (formData.get("description") as string)?.trim();
+  const location = (formData.get("location") as string)?.trim();
+
+  if (!name || !date) return;
+  const eventDate = new Date(date);
+  if (eventDate <= new Date()) return;
+
+  await prisma.event.update({
+    where: { id: eventId },
+    data: { name, date: eventDate, description: description || null, location: location || null },
+  });
+
+  revalidatePath(`/events/${eventId}`);
+  redirect(`/events/${eventId}`);
+}
+
 export async function deleteEvent(eventId: string) {
   const user = await requireUser();
   const event = await prisma.event.findUnique({ where: { id: eventId } });
@@ -75,6 +98,25 @@ export async function addGame(eventId: string, formData: FormData) {
   if (!event || event.date < new Date()) return;
 
   await prisma.game.create({ data: { name, userId: user.id!, eventId } });
+  revalidatePath(`/events/${eventId}`);
+}
+
+export async function toggleGameVote(gameId: string, eventId: string) {
+  const user = await requireUser();
+
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
+  if (!event || event.date < new Date()) return;
+
+  const existing = await prisma.gameVote.findUnique({
+    where: { userId_gameId: { userId: user.id!, gameId } },
+  });
+
+  if (existing) {
+    await prisma.gameVote.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.gameVote.create({ data: { userId: user.id!, gameId } });
+  }
+
   revalidatePath(`/events/${eventId}`);
 }
 

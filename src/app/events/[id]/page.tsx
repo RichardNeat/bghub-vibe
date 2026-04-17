@@ -24,7 +24,10 @@ export default async function EventPage({
         orderBy: { id: "asc" },
       },
       games: {
-        include: { user: { select: { id: true, name: true } } },
+        include: {
+          user: { select: { id: true, name: true } },
+          votes: { select: { userId: true } },
+        },
         orderBy: { id: "asc" },
       },
     },
@@ -82,7 +85,18 @@ export default async function EventPage({
                 <p style={{ color: "var(--text-secondary)" }}>{event.description}</p>
               )}
             </div>
-            {isCreator && !isPast && <DeleteEventButton eventId={id} />}
+            {isCreator && !isPast && (
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/events/${id}/edit`}
+                  className="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all hover:opacity-80"
+                  style={{ border: "1px solid var(--border)", color: "var(--text-secondary)" }}
+                >
+                  Edit
+                </Link>
+                <DeleteEventButton eventId={id} />
+              </div>
+            )}
           </div>
 
           {/* Meta pills */}
@@ -249,7 +263,11 @@ export default async function EventPage({
         {/* Games — client component for filtering */}
         <GamesSection
           eventId={id}
-          games={event.games}
+          games={event.games.map((g) => ({
+            ...g,
+            voteCount: g.votes.length,
+            hasVoted: g.votes.some((v) => v.userId === userId),
+          }))}
           userId={userId}
           isPast={isPast}
         />

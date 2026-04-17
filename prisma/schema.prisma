@@ -17,6 +17,7 @@ model User {
   events        Event[]
   attendances   Attendance[]
   games         Game[]
+  gameVotes     GameVote[]
 }
 
 model Account {
@@ -77,10 +78,21 @@ model Attendance {
 }
 
 model Game {
-  id      String @id @default(cuid())
+  id      String     @id @default(cuid())
   name    String
   userId  String
   eventId String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event   Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  votes   GameVote[]
+}
+
+model GameVote {
+  id     String @id @default(cuid())
+  userId String
+  gameId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
 }
