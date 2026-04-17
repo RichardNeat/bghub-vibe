@@ -19,6 +19,12 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             🎲 BGHub
           </a>
           <div className="flex items-center gap-2">
+            <Link
+              href="/clubs"
+              className="text-xs font-medium px-3 py-1.5 rounded-md transition-colors text-white/70 hover:text-white hover:bg-white/10"
+            >
+              Clubs
+            </Link>
             <ThemeToggle />
             <div className="w-px h-5 bg-white/20 mx-1" />
             {session.user.image && (

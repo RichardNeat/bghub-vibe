@@ -34,7 +34,23 @@
       "Bash(git -C /Users/richneat/Dev/sandbox/claude-training status)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "WebFetch(domain:boardgameclubs.uk)",
+      "WebFetch(domain:www.tabletopgaming.co.uk)",
+      "WebFetch(domain:www.ukgamesexpo.co.uk)",
+      "WebFetch(domain:www.londononboard.uk)",
+      "WebFetch(domain:overboardlondon.club)",
+      "WebFetch(domain:www.meetup.com)",
+      "WebFetch(domain:www.clubhousegaming.co.uk)",
+      "WebFetch(domain:www.g3gamers.co.uk)",
+      "WebFetch(domain:www.finchleygamesclub.org)",
+      "WebFetch(domain:bmyork.wordpress.com)",
+      "WebFetch(domain:conpulsion.org)",
+      "WebFetch(domain:discover.london)",
+      "WebFetch(domain:www.northwalestabletop.org)",
+      "WebFetch(domain:www.meepleperk.co.uk)",
+      "WebFetch(domain:www.slbg.club)",
+      "WebFetch(domain:www.hopwoodgames.com)"
     ]
   }
 }
