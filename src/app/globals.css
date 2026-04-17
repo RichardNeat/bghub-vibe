@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-page: #e7e7ea;
+  --bg-card: #ffffff;
+  --bg-nav: #3f3a60;
+  --bg-nav-dark: #2e2b47;
+  --border: #d1d4d7;
+  --border-light: #e1e3e5;
+  --text-primary: #212426;
+  --text-secondary: #666e75;
+  --text-muted: #878f96;
+  --accent: #005bca;
+  --accent-hover: #0049a2;
+  --accent-light: #e8f0fb;
+  --success: #16a34a;
+  --success-light: #dcfce7;
+  --danger: #dc2626;
+  --danger-light: #fee2e2;
+  --purple: #3f3a60;
+  --purple-light: #eeedf5;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --bg-page: #111827;
+  --bg-card: #1f2937;
+  --bg-nav: #1a1730;
+  --bg-nav-dark: #111020;
+  --border: #374151;
+  --border-light: #2d3748;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --accent: #60a5fa;
+  --accent-hover: #3b82f6;
+  --accent-light: rgba(96, 165, 250, 0.12);
+  --success: #4ade80;
+  --success-light: rgba(74, 222, 128, 0.12);
+  --danger: #f87171;
+  --danger-light: rgba(248, 113, 113, 0.12);
+  --purple: #a5b4fc;
+  --purple-light: rgba(165, 180, 252, 0.12);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-geist, "Proxima Nova", Arial, Helvetica, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Explicit input theming — avoids browser color-scheme overriding our backgrounds */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+textarea,
+select {
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+:root {
+  --input-bg: #ffffff;
+}
+.dark {
+  --input-bg: #111827;
+}
+
+/* Pointer cursor on all interactive elements */
+button, [role="button"], summary, select,
+a[href], input[type="submit"], input[type="button"] {
+  cursor: pointer;
+}
+
+/* Subtle hover lift on cards/links */
+a[href]:not(.no-hover) {
+  transition: opacity 0.15s;
+}
+
+/* Ensure disabled buttons don't show pointer */
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }

@@ -1,7 +1,37 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack --yes)"
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack --yes)",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const m = require\\('@prisma/adapter-better-sqlite3'\\); console.log\\(Object.keys\\(m\\)\\)\")",
+      "Bash(openssl rand *)",
+      "Bash(sqlite3 /Users/richneat/Dev/sandbox/claude-training/prisma/dev.db \".tables\")",
+      "Bash(sqlite3 /Users/richneat/Dev/sandbox/claude-training/dev.db \".tables\")",
+      "WebFetch(domain:boardgamegeek.com)",
+      "Bash(curl -s https://boardgamegeek.com/)",
+      "Bash(curl -s https://cf.geekdo-static.com/frontend/styles-EXLMQZ2Z.css)",
+      "Bash(awk '/^:root\\\\{/,/\\\\}/')",
+      "Bash(sqlite3 /Users/richneat/Dev/sandbox/claude-training/dev.db \"DELETE FROM Event WHERE name IN \\('Board Game Bonanza','New Year''s Eve Game Night','Quick Lunch Games'\\); DELETE FROM User WHERE email LIKE '%.seed@bghub.dev';\")",
+      "WebSearch",
+      "WebFetch(domain:www.postman.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:mixedconclusions.com)",
+      "WebFetch(domain:rdrr.io)",
+      "Bash(curl -s \"https://www.boardgamegeek.com/xmlapi2/search?query=wingspan&type=boardgame\")",
+      "Bash(curl -s -A \"Mozilla/5.0\" \"https://www.boardgamegeek.com/xmlapi2/search?query=wingspan&type=boardgame\")",
+      "Bash(curl -v -A \"Mozilla/5.0\" \"https://www.boardgamegeek.com/xmlapi2/search?query=wingspan&type=boardgame\")",
+      "Bash(curl -s --max-time 20 -A \"Mozilla/5.0\" \"https://www.boardgamegeek.com/xmlapi2/search?query=wingspan&type=boardgame\")",
+      "Bash(curl -s --max-time 20 \"https://api.geekdo.com/xmlapi2/search?query=wingspan&type=boardgame\")",
+      "Bash(curl -si --max-time 20 \"https://boardgamegeek.com/xmlapi2/search?query=wingspan&type=boardgame\")",
+      "Bash(curl -si --max-time 15 \"https://boardgamegeek.com/xmlapi2/search?query=wingspan\" -H \"Accept: application/xml, text/xml\")",
+      "Bash(curl -si --max-time 15 \"https://boardgamegeek.com/xmlapi2/thing?id=266192\")",
+      "WebFetch(domain:blog.arranfrance.com)",
+      "Bash(npm uninstall *)",
+      "Bash(git -C /Users/richneat/Dev/sandbox/claude-training remote -v)",
+      "Bash(git -C /Users/richneat/Dev/sandbox/claude-training status)"
     ]
   }
 }

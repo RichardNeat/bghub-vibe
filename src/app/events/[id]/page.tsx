@@ -1,0 +1,225 @@
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
+import { toggleAttendance } from "@/lib/actions";
+import { DeleteEventButton } from "./DeleteEventButton";
+import { GamesSection } from "./GamesSection";
+import Link from "next/link";
+
+export default async function EventPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const session = await auth();
+  const userId = session?.user?.id!;
+
+  const event = await prisma.event.findUnique({
+    where: { id },
+    include: {
+      creator: { select: { id: true, name: true } },
+      attendances: {
+        include: { user: { select: { id: true, name: true, image: true } } },
+        orderBy: { id: "asc" },
+      },
+      games: {
+        include: { user: { select: { id: true, name: true } } },
+        orderBy: { id: "asc" },
+      },
+    },
+  });
+
+  if (!event) notFound();
+
+  const isPast = event.date < new Date();
+  const isCreator = event.creatorId === userId;
+  const isAttending = event.attendances.some((a) => a.userId === userId);
+
+  const toggleAttendanceWithId = toggleAttendance.bind(null, id);
+
+  return (
+    <div className="space-y-6">
+      <Link
+        href="/events"
+        className="inline-flex items-center gap-1 text-sm transition-colors hover:underline"
+        style={{ color: "var(--accent)" }}
+      >
+        ← Events
+      </Link>
+
+      {/* Hero card */}
+      <div
+        className="rounded-xl overflow-hidden shadow-sm"
+        style={{ border: "1px solid var(--border)" }}
+      >
+        <div
+          className="h-2"
+          style={{
+            background: isPast
+              ? "var(--border)"
+              : "linear-gradient(90deg, var(--bg-nav-dark), var(--bg-nav))",
+          }}
+        />
+        <div className="px-6 py-5" style={{ backgroundColor: "var(--bg-card)" }}>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {event.name}
+                </h1>
+                {isPast && (
+                  <span
+                    className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}
+                  >
+                    Past event
+                  </span>
+                )}
+              </div>
+              {event.description && (
+                <p style={{ color: "var(--text-secondary)" }}>{event.description}</p>
+              )}
+            </div>
+            {isCreator && !isPast && <DeleteEventButton eventId={id} />}
+          </div>
+
+          {/* Meta pills */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {[
+              {
+                icon: "📅",
+                text: event.date.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                }),
+              },
+              {
+                icon: "🕐",
+                text: event.date.toLocaleTimeString("en-US", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                }),
+              },
+              {
+                icon: "👤",
+                text: event.creator ? `Hosted by ${event.creator.name}` : "Host deleted",
+              },
+            ].map(({ icon, text }) => (
+              <span
+                key={text}
+                className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full"
+                style={{
+                  backgroundColor: "var(--border-light)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {icon} {text}
+              </span>
+            ))}
+          </div>
+
+          {/* RSVP — hidden for past events */}
+          {!isPast && (
+            <form action={toggleAttendanceWithId} className="mt-5">
+              <button
+                type="submit"
+                className="px-6 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] shadow-sm"
+                style={
+                  isAttending
+                    ? {
+                        backgroundColor: "var(--success-light)",
+                        color: "var(--success)",
+                        border: "1px solid var(--success)",
+                      }
+                    : {
+                        backgroundColor: "var(--accent)",
+                        color: "#fff",
+                        border: "1px solid var(--accent-hover)",
+                      }
+                }
+              >
+                {isAttending ? "✓ I'm attending — click to cancel" : "RSVP — I'll be there"}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+
+      {/* Two-column lower section */}
+      <div className="grid sm:grid-cols-2 gap-5">
+        {/* Attendees */}
+        <section
+          className="rounded-xl shadow-sm"
+          style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
+        >
+          <div
+            className="px-5 py-3.5 flex items-center justify-between"
+            style={{ borderBottom: "1px solid var(--border-light)" }}
+          >
+            <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>
+              {isPast ? "Attended" : "Attendees"}
+            </h2>
+            <span
+              className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+              style={{ backgroundColor: "var(--purple-light)", color: "var(--purple)" }}
+            >
+              {event.attendances.length}
+            </span>
+          </div>
+          <div className="px-5 py-4">
+            {event.attendances.length === 0 ? (
+              <p className="text-sm text-center py-4" style={{ color: "var(--text-muted)" }}>
+                {isPast ? "Nobody attended this event." : "No one yet — be the first!"}
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {event.attendances.map((a) => (
+                  <li key={a.id} className="flex items-center gap-3">
+                    {a.user.image ? (
+                      <img src={a.user.image} alt="" className="w-8 h-8 rounded-full" />
+                    ) : (
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                        style={{ backgroundColor: "var(--bg-nav)" }}
+                      >
+                        {a.user.name?.[0]}
+                      </div>
+                    )}
+                    <span
+                      className="text-sm font-medium"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {a.user.name}
+                    </span>
+                    {a.userId === userId && (
+                      <span
+                        className="text-xs font-semibold px-2 py-0.5 rounded-full ml-auto"
+                        style={{
+                          backgroundColor: "var(--success-light)",
+                          color: "var(--success)",
+                        }}
+                      >
+                        you
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+
+        {/* Games — client component for filtering */}
+        <GamesSection
+          eventId={id}
+          games={event.games}
+          userId={userId}
+          isPast={isPast}
+        />
+      </div>
+    </div>
+  );
+}
