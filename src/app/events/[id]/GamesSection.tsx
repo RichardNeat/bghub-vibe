@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addGame, removeGame, toggleGameVote } from "@/lib/actions";
+import { addGame, removeGame, toggleGameVote, updateGame } from "@/lib/actions";
 
 type Game = {
   id: string;
@@ -22,6 +22,7 @@ type Props = {
 export function GamesSection({ eventId, games, userId, isPast }: Props) {
   const [filter, setFilter] = useState<"all" | "mine">("all");
   const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes">("added");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const addGameWithId = addGame.bind(null, eventId);
 
@@ -102,54 +103,95 @@ export function GamesSection({ eventId, games, userId, isPast }: Props) {
                 className="flex items-start justify-between gap-3 rounded-lg px-3 py-2.5"
                 style={{ backgroundColor: "var(--bg-page)" }}
               >
-                {/* Stacked layout so the game name is never truncated */}
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="text-sm font-medium break-words" style={{ color: "var(--text-primary)" }}>
-                    🎲 {g.name}
-                  </span>
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    by {g.user.name}
-                    {g.userId === userId && (
-                      <span className="ml-1 font-semibold" style={{ color: "var(--accent)" }}>
-                        (you)
+                {editingId === g.id ? (
+                  <form
+                    action={updateGame.bind(null, g.id, eventId)}
+                    className="flex items-center gap-2 flex-1 min-w-0"
+                    onSubmit={() => setEditingId(null)}
+                  >
+                    <input
+                      name="name"
+                      defaultValue={g.name}
+                      autoFocus
+                      required
+                      className="flex-1 rounded-lg px-2 py-1 text-sm focus:outline-none min-w-0"
+                      style={{ border: "1px solid var(--accent)" }}
+                    />
+                    <button
+                      type="submit"
+                      className="text-xs font-semibold px-2 py-1 rounded-lg text-white shrink-0"
+                      style={{ backgroundColor: "var(--accent)" }}
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="text-xs font-medium hover:underline shrink-0"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Cancel
+                    </button>
+                  </form>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                      <span className="text-sm font-medium break-words" style={{ color: "var(--text-primary)" }}>
+                        🎲 {g.name}
                       </span>
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {!isPast && (
-                    <form action={toggleGameVote.bind(null, g.id, eventId)}>
-                      <button
-                        type="submit"
-                        className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-all hover:opacity-80"
-                        style={
-                          g.hasVoted
-                            ? { backgroundColor: "var(--accent)", color: "#fff" }
-                            : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }
-                        }
-                      >
-                        ▲ {g.voteCount > 0 ? g.voteCount : ""}
-                      </button>
-                    </form>
-                  )}
-                  {isPast && g.voteCount > 0 && (
-                    <span className="text-xs font-semibold px-2 py-1 rounded-full"
-                      style={{ backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}>
-                      ▲ {g.voteCount}
-                    </span>
-                  )}
-                  {!isPast && g.userId === userId && (
-                    <form action={removeGame.bind(null, g.id, eventId)}>
-                      <button
-                        type="submit"
-                        className="text-xs font-medium transition-colors hover:underline"
-                        style={{ color: "var(--danger)" }}
-                      >
-                        Remove
-                      </button>
-                    </form>
-                  )}
-                </div>
+                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        by {g.user.name}
+                        {g.userId === userId && (
+                          <span className="ml-1 font-semibold" style={{ color: "var(--accent)" }}>(you)</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!isPast && (
+                        <form action={toggleGameVote.bind(null, g.id, eventId)}>
+                          <button
+                            type="submit"
+                            className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-all hover:opacity-80"
+                            style={
+                              g.hasVoted
+                                ? { backgroundColor: "var(--accent)", color: "#fff" }
+                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }
+                            }
+                          >
+                            ▲ {g.voteCount > 0 ? g.voteCount : ""}
+                          </button>
+                        </form>
+                      )}
+                      {isPast && g.voteCount > 0 && (
+                        <span className="text-xs font-semibold px-2 py-1 rounded-full"
+                          style={{ backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}>
+                          ▲ {g.voteCount}
+                        </span>
+                      )}
+                      {!isPast && g.userId === userId && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setEditingId(g.id)}
+                            className="text-xs font-medium hover:underline"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            Edit
+                          </button>
+                          <form action={removeGame.bind(null, g.id, eventId)}>
+                            <button
+                              type="submit"
+                              className="text-xs font-medium transition-colors hover:underline"
+                              style={{ color: "var(--danger)" }}
+                            >
+                              Remove
+                            </button>
+                          </form>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
               </li>
             ))}
           </ul>

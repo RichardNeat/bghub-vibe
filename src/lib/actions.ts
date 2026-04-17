@@ -120,6 +120,21 @@ export async function toggleGameVote(gameId: string, eventId: string) {
   revalidatePath(`/events/${eventId}`);
 }
 
+export async function updateGame(gameId: string, eventId: string, formData: FormData) {
+  const user = await requireUser();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return;
+
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
+  if (!event || event.date < new Date()) return;
+
+  const game = await prisma.game.findUnique({ where: { id: gameId } });
+  if (!game || game.userId !== user.id) return;
+
+  await prisma.game.update({ where: { id: gameId }, data: { name } });
+  revalidatePath(`/events/${eventId}`);
+}
+
 export async function removeGame(gameId: string, eventId: string) {
   const user = await requireUser();
 
