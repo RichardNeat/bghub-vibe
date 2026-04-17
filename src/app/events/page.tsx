@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { createEvent } from "@/lib/actions";
 import { DateTimeInput } from "@/components/DateTimeInput";
+import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 import Link from "next/link";
 
 export default async function EventsPage() {
@@ -81,7 +82,7 @@ export default async function EventsPage() {
               <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
                 Location <span className="normal-case font-normal">(optional)</span>
               </label>
-              <input
+              <LocationAutocomplete
                 name="location"
                 placeholder="123 Main St, London"
                 className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
