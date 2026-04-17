@@ -31,7 +31,10 @@
       "WebFetch(domain:blog.arranfrance.com)",
       "Bash(npm uninstall *)",
       "Bash(git -C /Users/richneat/Dev/sandbox/claude-training remote -v)",
-      "Bash(git -C /Users/richneat/Dev/sandbox/claude-training status)"
+      "Bash(git -C /Users/richneat/Dev/sandbox/claude-training status)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }

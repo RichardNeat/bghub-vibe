@@ -16,6 +16,7 @@ export async function createEvent(formData: FormData) {
   const name = (formData.get("name") as string)?.trim();
   const date = formData.get("date") as string;
   const description = (formData.get("description") as string)?.trim();
+  const location = (formData.get("location") as string)?.trim();
 
   if (!name || !date) return;
 
@@ -27,6 +28,7 @@ export async function createEvent(formData: FormData) {
       name,
       date: eventDate,
       description: description || null,
+      location: location || null,
       creatorId: user.id!,
     },
   });

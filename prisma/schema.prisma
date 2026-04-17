@@ -58,6 +58,7 @@ model Event {
   name        String
   date        DateTime
   description String?
+  location    String?
   createdAt   DateTime     @default(now())
   creatorId   String?
   creator     User?        @relation(fields: [creatorId], references: [id], onDelete: SetNull)

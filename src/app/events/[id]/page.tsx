@@ -35,6 +35,7 @@ export default async function EventPage({
   const isPast = event.date < new Date();
   const isCreator = event.creatorId === userId;
   const isAttending = event.attendances.some((a) => a.userId === userId);
+  const mapEnabled = !!process.env.GOOGLE_MAPS_KEY;
 
   const toggleAttendanceWithId = toggleAttendance.bind(null, id);
 
@@ -107,6 +108,7 @@ export default async function EventPage({
                 icon: "👤",
                 text: event.creator ? `Hosted by ${event.creator.name}` : "Host deleted",
               },
+              ...(event.location ? [{ icon: "📍", text: event.location }] : []),
             ].map(({ icon, text }) => (
               <span
                 key={text}
@@ -147,6 +149,38 @@ export default async function EventPage({
           )}
         </div>
       </div>
+
+      {/* Map card */}
+      {event.location && (
+        <div
+          className="rounded-xl overflow-hidden shadow-sm"
+          style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
+        >
+          {mapEnabled && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/map-image?address=${encodeURIComponent(event.location)}`}
+              alt={`Map of ${event.location}`}
+              className="w-full object-cover"
+              style={{ height: "200px" }}
+            />
+          )}
+          <div className="px-5 py-3.5 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              📍 {event.location}
+            </p>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold px-4 py-1.5 rounded-lg transition-all hover:opacity-90"
+              style={{ backgroundColor: "var(--accent)", color: "#fff" }}
+            >
+              Get directions
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Two-column lower section */}
       <div className="grid sm:grid-cols-2 gap-5">

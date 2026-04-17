@@ -79,6 +79,17 @@ export default async function EventsPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
+                Location <span className="normal-case font-normal">(optional)</span>
+              </label>
+              <input
+                name="location"
+                placeholder="123 Main St, London"
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
+                style={{ border: "1px solid var(--border)" }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
                 Description <span className="normal-case font-normal">(optional)</span>
               </label>
               <textarea
