@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { toggleAttendance } from "@/lib/actions";
+import { toggleAttendance, removeAttendance } from "@/lib/actions";
 import { DeleteEventButton } from "./DeleteEventButton";
 import { GamesSection } from "./GamesSection";
 import Link from "next/link";
@@ -39,6 +39,7 @@ export default async function EventPage({
   const isCreator = event.creatorId === userId;
   const isAttending = event.attendances.some((a) => a.userId === userId);
   const mapEnabled = !!process.env.GOOGLE_MAPS_KEY;
+  const userIsAdmin = session?.user?.email === process.env.ADMIN_EMAIL && !!process.env.ADMIN_EMAIL;
 
   const toggleAttendanceWithId = toggleAttendance.bind(null, id);
 
@@ -85,15 +86,17 @@ export default async function EventPage({
                 <p style={{ color: "var(--text-secondary)" }}>{event.description}</p>
               )}
             </div>
-            {isCreator && !isPast && (
+            {(isCreator || userIsAdmin) && !isPast && (
               <div className="flex items-center gap-2">
-                <Link
-                  href={`/events/${id}/edit`}
-                  className="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all hover:opacity-80"
-                  style={{ border: "1px solid var(--border)", color: "var(--text-secondary)" }}
-                >
-                  Edit
-                </Link>
+                {isCreator && (
+                  <Link
+                    href={`/events/${id}/edit`}
+                    className="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all hover:opacity-80"
+                    style={{ border: "1px solid var(--border)", color: "var(--text-secondary)" }}
+                  >
+                    Edit
+                  </Link>
+                )}
                 <DeleteEventButton eventId={id} />
               </div>
             )}
@@ -236,22 +239,27 @@ export default async function EventPage({
                         {a.user.name?.[0]}
                       </div>
                     )}
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: "var(--text-primary)" }}
-                    >
+                    <span className="text-sm font-medium flex-1" style={{ color: "var(--text-primary)" }}>
                       {a.user.name}
                     </span>
                     {a.userId === userId && (
                       <span
-                        className="text-xs font-semibold px-2 py-0.5 rounded-full ml-auto"
-                        style={{
-                          backgroundColor: "var(--success-light)",
-                          color: "var(--success)",
-                        }}
+                        className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}
                       >
                         you
                       </span>
+                    )}
+                    {userIsAdmin && !isPast && (
+                      <form action={removeAttendance.bind(null, a.id, id)}>
+                        <button
+                          type="submit"
+                          className="text-xs font-medium hover:underline"
+                          style={{ color: "var(--danger)" }}
+                        >
+                          Remove
+                        </button>
+                      </form>
                     )}
                   </li>
                 ))}
@@ -270,6 +278,7 @@ export default async function EventPage({
           }))}
           userId={userId}
           isPast={isPast}
+          isAdmin={userIsAdmin}
         />
       </div>
     </div>

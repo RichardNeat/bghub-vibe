@@ -11,6 +11,10 @@ async function requireUser() {
   return session.user;
 }
 
+function isAdmin(email: string | null | undefined) {
+  return !!process.env.ADMIN_EMAIL && email === process.env.ADMIN_EMAIL;
+}
+
 export async function createEvent(formData: FormData) {
   const user = await requireUser();
   const name = (formData.get("name") as string)?.trim();
@@ -63,7 +67,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
 export async function deleteEvent(eventId: string) {
   const user = await requireUser();
   const event = await prisma.event.findUnique({ where: { id: eventId } });
-  if (!event || event.creatorId !== user.id) return;
+  if (!event || (event.creatorId !== user.id && !isAdmin(user.email))) return;
 
   await prisma.event.delete({ where: { id: eventId } });
   revalidatePath("/events");
@@ -98,6 +102,13 @@ export async function addGame(eventId: string, formData: FormData) {
   if (!event || event.date < new Date()) return;
 
   await prisma.game.create({ data: { name, userId: user.id!, eventId } });
+  revalidatePath(`/events/${eventId}`);
+}
+
+export async function removeAttendance(attendanceId: string, eventId: string) {
+  const user = await requireUser();
+  if (!isAdmin(user.email)) return;
+  await prisma.attendance.delete({ where: { id: attendanceId } });
   revalidatePath(`/events/${eventId}`);
 }
 
@@ -142,7 +153,7 @@ export async function removeGame(gameId: string, eventId: string) {
   if (!event || event.date < new Date()) return;
 
   const game = await prisma.game.findUnique({ where: { id: gameId } });
-  if (!game || game.userId !== user.id) return;
+  if (!game || (game.userId !== user.id && !isAdmin(user.email))) return;
 
   await prisma.game.delete({ where: { id: gameId } });
   revalidatePath(`/events/${eventId}`);

@@ -17,9 +17,10 @@ type Props = {
   games: Game[];
   userId: string;
   isPast: boolean;
+  isAdmin: boolean;
 };
 
-export function GamesSection({ eventId, games, userId, isPast }: Props) {
+export function GamesSection({ eventId, games, userId, isPast, isAdmin }: Props) {
   const [filter, setFilter] = useState<"all" | "mine">("all");
   const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes">("added");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -168,16 +169,18 @@ export function GamesSection({ eventId, games, userId, isPast }: Props) {
                           ▲ {g.voteCount}
                         </span>
                       )}
-                      {!isPast && g.userId === userId && (
+                      {!isPast && (g.userId === userId || isAdmin) && (
                         <>
-                          <button
-                            type="button"
-                            onClick={() => setEditingId(g.id)}
-                            className="text-xs font-medium hover:underline"
-                            style={{ color: "var(--text-secondary)" }}
-                          >
-                            Edit
-                          </button>
+                          {g.userId === userId && (
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(g.id)}
+                              className="text-xs font-medium hover:underline"
+                              style={{ color: "var(--text-secondary)" }}
+                            >
+                              Edit
+                            </button>
+                          )}
                           <form action={removeGame.bind(null, g.id, eventId)}>
                             <button
                               type="submit"
