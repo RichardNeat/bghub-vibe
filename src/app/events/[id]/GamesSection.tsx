@@ -119,9 +119,14 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
         {!isPast && !isAttending && (
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             Want to bring a game to this event?{" "}
-            <a href="#rsvp" className="underline font-medium" style={{ color: "var(--accent)" }}>
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="underline font-medium"
+              style={{ color: "var(--accent)" }}
+            >
               Register your attendance first!
-            </a>
+            </button>
           </p>
         )}
 
