@@ -89,6 +89,9 @@ export async function toggleAttendance(eventId: string) {
   if (existing) {
     await prisma.attendance.delete({ where: { id: existing.id } });
     await prisma.game.deleteMany({ where: { userId: user.id!, eventId } });
+    const eventGameIds = (await prisma.game.findMany({ where: { eventId }, select: { id: true } })).map((g) => g.id);
+    await prisma.gameVote.deleteMany({ where: { userId: user.id!, gameId: { in: eventGameIds } } });
+    await prisma.gameWant.deleteMany({ where: { userId: user.id!, gameId: { in: eventGameIds } } });
   } else {
     await prisma.attendance.create({ data: { userId: user.id!, eventId } });
   }
