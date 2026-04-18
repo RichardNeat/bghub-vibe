@@ -5,6 +5,7 @@ import { toggleAttendance, removeAttendance } from "@/lib/actions";
 import { DeleteEventButton } from "./DeleteEventButton";
 import { GamesSection } from "./GamesSection";
 import { FindGameModal } from "./FindGameModal";
+import { AttendanceButton } from "./AttendanceButton";
 import Link from "next/link";
 
 export default async function EventPage({
@@ -144,27 +145,11 @@ export default async function EventPage({
 
           {/* RSVP — hidden for past events */}
           {!isPast && (
-            <form action={toggleAttendanceWithId} className="mt-5">
-              <button
-                type="submit"
-                className="px-6 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] shadow-sm"
-                style={
-                  isAttending
-                    ? {
-                        backgroundColor: "var(--success-light)",
-                        color: "var(--success)",
-                        border: "1px solid var(--success)",
-                      }
-                    : {
-                        backgroundColor: "var(--accent)",
-                        color: "#fff",
-                        border: "1px solid var(--accent-hover)",
-                      }
-                }
-              >
-                {isAttending ? "✓ I'm attending — click to cancel" : "RSVP — I'll be there"}
-              </button>
-            </form>
+            <AttendanceButton
+              isAttending={isAttending}
+              hasGames={event.games.some((g) => g.userId === userId)}
+              action={toggleAttendanceWithId}
+            />
           )}
         </div>
       </div>
