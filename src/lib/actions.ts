@@ -221,3 +221,22 @@ export async function joinClubByName(name: string) {
   revalidatePath("/events");
   revalidatePath("/clubs");
 }
+
+export async function toggleGameWant(gameId: string, eventId: string) {
+  const user = await requireUser();
+
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
+  if (!event || event.date < new Date()) return;
+
+  const existing = await prisma.gameWant.findUnique({
+    where: { userId_gameId: { userId: user.id!, gameId } },
+  });
+
+  if (existing) {
+    await prisma.gameWant.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.gameWant.create({ data: { userId: user.id!, gameId } });
+  }
+
+  revalidatePath(`/events/${eventId}`);
+}

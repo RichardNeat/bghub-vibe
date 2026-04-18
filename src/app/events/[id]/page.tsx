@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { toggleAttendance, removeAttendance } from "@/lib/actions";
 import { DeleteEventButton } from "./DeleteEventButton";
 import { GamesSection } from "./GamesSection";
+import { FindGameModal } from "./FindGameModal";
 import Link from "next/link";
 
 export default async function EventPage({
@@ -27,6 +28,7 @@ export default async function EventPage({
         include: {
           user: { select: { id: true, name: true } },
           votes: { select: { userId: true } },
+          wants: { select: { userId: true } },
         },
         orderBy: { id: "asc" },
       },
@@ -282,10 +284,23 @@ export default async function EventPage({
             ...g,
             voteCount: g.votes.length,
             hasVoted: g.votes.some((v) => v.userId === userId),
+            hasWanted: g.wants.some((w) => w.userId === userId),
           }))}
           userId={userId}
           isPast={isPast}
           isAdmin={userIsAdmin}
+          findGameTrigger={
+            !isPast && event.attendances.length > 0 && event.games.length > 0 ? (
+              <FindGameModal
+                attendees={event.attendances.map((a) => a.user)}
+                games={event.games.map((g) => ({
+                  id: g.id,
+                  name: g.name,
+                  wantedBy: g.wants.map((w) => w.userId),
+                }))}
+              />
+            ) : undefined
+          }
         />
       </div>
     </div>

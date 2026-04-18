@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addGame, removeGame, toggleGameVote, updateGame } from "@/lib/actions";
+import { addGame, removeGame, toggleGameVote, toggleGameWant, updateGame } from "@/lib/actions";
 
 type Game = {
   id: string;
@@ -10,6 +10,7 @@ type Game = {
   user: { id: string; name: string | null };
   voteCount: number;
   hasVoted: boolean;
+  hasWanted: boolean;
 };
 
 type Props = {
@@ -18,9 +19,10 @@ type Props = {
   userId: string;
   isPast: boolean;
   isAdmin: boolean;
+  findGameTrigger?: React.ReactNode;
 };
 
-export function GamesSection({ eventId, games, userId, isPast, isAdmin }: Props) {
+export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGameTrigger }: Props) {
   const [filter, setFilter] = useState<"all" | "mine">("all");
   const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes">("added");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -65,6 +67,7 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin }: Props)
 
         {games.length > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
+            {findGameTrigger}
             <button
               onClick={() => setFilter(filter === "mine" ? "all" : "mine")}
               className="text-xs font-medium px-3 py-1 rounded-full border transition-colors"
@@ -142,19 +145,36 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin }: Props)
                 ) : (
                   <>
                     {!isPast && (
-                      <form action={toggleGameVote.bind(null, g.id, eventId)} className="shrink-0">
-                        <button
-                          type="submit"
-                          className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-all hover:opacity-80"
-                          style={
-                            g.hasVoted
-                              ? { backgroundColor: "var(--accent)", color: "#fff" }
-                              : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }
-                          }
-                        >
-                          ▲ {g.voteCount > 0 ? g.voteCount : ""}
-                        </button>
-                      </form>
+                      <div className="flex flex-col gap-1 shrink-0">
+                        <form action={toggleGameVote.bind(null, g.id, eventId)}>
+                          <button
+                            type="submit"
+                            title="I might be interested"
+                            className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-all hover:opacity-80 w-full justify-center"
+                            style={
+                              g.hasVoted
+                                ? { backgroundColor: "var(--accent)", color: "#fff" }
+                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }
+                            }
+                          >
+                            ▲ {g.voteCount > 0 ? g.voteCount : ""}
+                          </button>
+                        </form>
+                        <form action={toggleGameWant.bind(null, g.id, eventId)}>
+                          <button
+                            type="submit"
+                            title="I want to play this"
+                            className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-all hover:opacity-80 w-full justify-center"
+                            style={
+                              g.hasWanted
+                                ? { backgroundColor: "var(--success, #16a34a)", color: "#fff" }
+                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }
+                            }
+                          >
+                            ♥
+                          </button>
+                        </form>
+                      </div>
                     )}
                     {isPast && g.voteCount > 0 && (
                       <span className="text-xs font-semibold px-2 py-1 rounded-full shrink-0"
