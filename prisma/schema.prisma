@@ -12,6 +12,7 @@ model User {
   email         String       @unique
   emailVerified DateTime?
   image         String?
+  bggUsername   String?
   accounts      Account[]
   sessions      Session[]
   events        Event[]

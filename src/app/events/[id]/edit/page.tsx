@@ -77,14 +77,10 @@ export default async function EditEventPage({
             <LocationAutocomplete
               name="location"
               placeholder="123 Main St, London"
+              defaultValue={event.location ?? ""}
               className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
               style={{ border: "1px solid var(--border)" }}
             />
-            {event.location && (
-              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                Current: {event.location}
-              </p>
-            )}
           </div>
 
           <div>

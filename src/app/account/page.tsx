@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { updateBggUsername } from "@/lib/actions";
 import { DeleteAccountButton } from "./DeleteAccountButton";
 import Link from "next/link";
 import Image from "next/image";
@@ -83,6 +84,49 @@ export default async function AccountPage() {
             </p>
           </div>
         ))}
+      </div>
+
+      {/* BGG Username */}
+      <div
+        className="rounded-xl shadow-sm p-6 space-y-4"
+        style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
+      >
+        <div>
+          <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>BoardGameGeek</h2>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>
+            Your BGG username will be linked from the attendees list on events.
+          </p>
+        </div>
+        <form action={updateBggUsername} className="flex gap-2">
+          <input
+            name="bggUsername"
+            defaultValue={user.bggUsername ?? ""}
+            placeholder="Your BGG username"
+            className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none"
+            style={{ border: "1px solid var(--border)" }}
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
+            style={{ backgroundColor: "var(--accent)" }}
+          >
+            Save
+          </button>
+        </form>
+        {user.bggUsername && (
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            Collection:{" "}
+            <a
+              href={`https://boardgamegeek.com/collection/user/${user.bggUsername}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+              style={{ color: "var(--accent)" }}
+            >
+              boardgamegeek.com/collection/user/{user.bggUsername}
+            </a>
+          </p>
+        )}
       </div>
 
       {/* Danger zone */}

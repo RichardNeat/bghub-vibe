@@ -177,3 +177,10 @@ export async function deleteAccount() {
 
   redirect("/");
 }
+
+export async function updateBggUsername(formData: FormData) {
+  const user = await requireUser();
+  const bggUsername = (formData.get("bggUsername") as string)?.trim() || null;
+  await prisma.user.update({ where: { id: user.id! }, data: { bggUsername } });
+  revalidatePath("/account");
+}

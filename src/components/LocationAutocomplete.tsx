@@ -5,12 +5,13 @@ import { useState, useRef, useCallback, useEffect } from "react";
 interface Props {
   name: string;
   placeholder?: string;
+  defaultValue?: string;
   className?: string;
   style?: React.CSSProperties;
 }
 
-export function LocationAutocomplete({ name, placeholder, className, style }: Props) {
-  const [query, setQuery] = useState("");
+export function LocationAutocomplete({ name, placeholder, defaultValue, className, style }: Props) {
+  const [query, setQuery] = useState(defaultValue ?? "");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);

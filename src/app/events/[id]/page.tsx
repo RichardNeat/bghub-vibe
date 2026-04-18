@@ -20,7 +20,7 @@ export default async function EventPage({
     include: {
       creator: { select: { id: true, name: true } },
       attendances: {
-        include: { user: { select: { id: true, name: true, image: true } } },
+        include: { user: { select: { id: true, name: true, bggUsername: true } } },
         orderBy: { id: "asc" },
       },
       games: {
@@ -207,14 +207,19 @@ export default async function EventPage({
           style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
         >
           <div
-            className="px-5 py-3.5 flex items-center justify-between"
+            className="px-5 py-3.5 flex items-center justify-between gap-4"
             style={{ borderBottom: "1px solid var(--border-light)" }}
           >
-            <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>
-              {isPast ? "Attended" : "Attendees"}
-            </h2>
+            <div>
+              <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                {isPast ? "Attended" : "Attendees"}
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                Click a name to view their BGG collection
+              </p>
+            </div>
             <span
-              className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+              className="text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0"
               style={{ backgroundColor: "var(--purple-light)", color: "var(--purple)" }}
             >
               {event.attendances.length}
@@ -229,19 +234,21 @@ export default async function EventPage({
               <ul className="space-y-3">
                 {event.attendances.map((a) => (
                   <li key={a.id} className="flex items-center gap-3">
-                    {a.user.image ? (
-                      <img src={a.user.image} alt="" className="w-8 h-8 rounded-full" />
-                    ) : (
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                        style={{ backgroundColor: "var(--bg-nav)" }}
+                    {a.user.bggUsername ? (
+                      <a
+                        href={`https://boardgamegeek.com/collection/user/${a.user.bggUsername}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium flex-1 hover:underline"
+                        style={{ color: "var(--accent)" }}
                       >
-                        {a.user.name?.[0]}
-                      </div>
+                        {a.user.name}
+                      </a>
+                    ) : (
+                      <span className="text-sm font-medium flex-1" style={{ color: "var(--text-primary)" }}>
+                        {a.user.name}
+                      </span>
                     )}
-                    <span className="text-sm font-medium flex-1" style={{ color: "var(--text-primary)" }}>
-                      {a.user.name}
-                    </span>
                     {a.userId === userId && (
                       <span
                         className="text-xs font-semibold px-2 py-0.5 rounded-full"
