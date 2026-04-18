@@ -67,7 +67,7 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
               <span className="font-bold" style={{ color: "var(--accent)" }}>▲</span> I&apos;m interested
             </span>
             <span className="text-xs flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
-              <span className="font-bold" style={{ color: "var(--success, #16a34a)" }}>♥</span> I really want to play this
+              <span className="font-bold" style={{ color: "#ca8a04" }}>★</span> I really want to play this
             </span>
           </div>
         </div>
@@ -177,11 +177,11 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
                             style={{
                               height: "1.75rem",
                               ...(g.hasWanted
-                                ? { backgroundColor: "var(--success, #16a34a)", color: "#fff" }
+                                ? { backgroundColor: "#ca8a04", color: "#fff" }
                                 : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" })
                             }}
                           >
-                            ♥{g.wantCount > 0 ? ` ${g.wantCount}` : ""}
+                            ★{g.wantCount > 0 ? ` ${g.wantCount}` : ""}
                           </button>
                         </form>
                       </div>
