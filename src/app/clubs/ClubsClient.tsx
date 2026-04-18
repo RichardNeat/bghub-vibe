@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { clubs, REGIONS } from "@/data/clubs";
-import { joinClub, leaveClub } from "@/lib/actions";
+import { joinClub, joinClubByName, leaveClub } from "@/lib/actions";
 
 type DbClub = { id: string; name: string };
 
@@ -118,21 +118,25 @@ export function ClubsClient({
                             </p>
                           )}
                         </div>
-                        {dbClub && (
-                          <form action={isJoined ? leaveClub.bind(null, dbClub.id) : joinClub.bind(null, dbClub.id)}>
-                            <button
-                              type="submit"
-                              className="text-xs font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-all hover:opacity-80"
-                              style={
-                                isJoined
-                                  ? { backgroundColor: "var(--border-light)", color: "var(--text-secondary)" }
-                                  : { backgroundColor: "var(--accent-light)", color: "var(--accent)" }
-                              }
-                            >
-                              {isJoined ? "Joined ✓" : "Join"}
-                            </button>
-                          </form>
-                        )}
+                        <form action={
+                          isJoined
+                            ? leaveClub.bind(null, dbClub!.id)
+                            : dbClub
+                            ? joinClub.bind(null, dbClub.id)
+                            : joinClubByName.bind(null, club.name)
+                        }>
+                          <button
+                            type="submit"
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-all hover:opacity-80"
+                            style={
+                              isJoined
+                                ? { backgroundColor: "var(--border-light)", color: "var(--text-secondary)" }
+                                : { backgroundColor: "var(--accent-light)", color: "var(--accent)" }
+                            }
+                          >
+                            {isJoined ? "Joined ✓" : "Join"}
+                          </button>
+                        </form>
                       </div>
                       <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                         {club.description}

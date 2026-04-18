@@ -204,3 +204,20 @@ export async function leaveClub(clubId: string) {
   revalidatePath("/account");
   revalidatePath("/events");
 }
+
+export async function joinClubByName(name: string) {
+  const user = await requireUser();
+  const club = await prisma.club.upsert({
+    where: { name },
+    update: {},
+    create: { name },
+  });
+  await prisma.userClub.upsert({
+    where: { userId_clubId: { userId: user.id!, clubId: club.id } },
+    update: {},
+    create: { userId: user.id!, clubId: club.id },
+  });
+  revalidatePath("/account");
+  revalidatePath("/events");
+  revalidatePath("/clubs");
+}
