@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { addGame, removeGame, toggleGameVote, toggleGameWant, updateGame } from "@/lib/actions";
 
 type Game = {
@@ -27,8 +27,19 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
   const [filter, setFilter] = useState<"all" | "mine">("all");
   const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes" | "wants">("added");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [askOnAdd, setAskOnAdd] = useState(true);
+  const [popup, setPopup] = useState<{ gameId: string; gameName: string } | null>(null);
+  const addFormRef = useRef<HTMLFormElement>(null);
 
   const addGameWithId = addGame.bind(null, eventId);
+
+  async function handleAddGame(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const result = await addGameWithId(formData);
+    addFormRef.current?.reset();
+    if (result && askOnAdd) setPopup(result);
+  }
 
   const displayed = [...games]
     .filter((g) => filter === "all" || g.userId === userId)
@@ -234,26 +245,82 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
         )}
 
         {!isPast && (
-          <form action={addGameWithId} className="flex gap-2 pt-1">
-            <input
-              type="text"
-              name="name"
-              required
-              placeholder="Add a game…"
-              autoComplete="off"
-              className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none transition"
-              style={{ border: "1px solid var(--border)" }}
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 shrink-0 shadow-sm"
-              style={{ backgroundColor: "var(--accent)" }}
-            >
-              Add
-            </button>
+          <form ref={addFormRef} onSubmit={handleAddGame} className="space-y-2 pt-1">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                name="name"
+                required
+                placeholder="Add a game…"
+                autoComplete="off"
+                className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none transition"
+                style={{ border: "1px solid var(--border)" }}
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 shrink-0 shadow-sm"
+                style={{ backgroundColor: "var(--accent)" }}
+              >
+                Add
+              </button>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+              <input
+                type="checkbox"
+                checked={askOnAdd}
+                onChange={(e) => setAskOnAdd(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                Ask me if I want to play each game I add
+              </span>
+            </label>
           </form>
         )}
       </div>
+
+      {/* Want to play popup */}
+      {popup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden"
+            style={{ backgroundColor: "var(--bg-card)" }}
+          >
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <p className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                  Do you want to play this?
+                </p>
+                <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                  🎲 {popup.gameName}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    await toggleGameWant(popup.gameId, eventId);
+                    setPopup(null);
+                  }}
+                  className="flex-1 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
+                  style={{ backgroundColor: "#ca8a04" }}
+                >
+                  ★ Yes, I want to play it
+                </button>
+                <button
+                  onClick={() => setPopup(null)}
+                  className="flex-1 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-80"
+                  style={{ backgroundColor: "var(--border-light)", color: "var(--text-secondary)" }}
+                >
+                  Not for me
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

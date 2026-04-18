@@ -95,16 +95,17 @@ export async function toggleAttendance(eventId: string) {
   revalidatePath(`/events/${eventId}`);
 }
 
-export async function addGame(eventId: string, formData: FormData) {
+export async function addGame(eventId: string, formData: FormData): Promise<{ gameId: string; gameName: string } | null> {
   const user = await requireUser();
   const name = (formData.get("name") as string)?.trim();
-  if (!name) return;
+  if (!name) return null;
 
   const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
-  if (!event || event.date < new Date()) return;
+  if (!event || event.date < new Date()) return null;
 
-  await prisma.game.create({ data: { name, userId: user.id!, eventId } });
+  const game = await prisma.game.create({ data: { name, userId: user.id!, eventId } });
   revalidatePath(`/events/${eventId}`);
+  return { gameId: game.id, gameName: game.name };
 }
 
 export async function removeAttendance(attendanceId: string, eventId: string) {
@@ -126,6 +127,8 @@ export async function toggleGameVote(gameId: string, eventId: string) {
 
   if (existing) {
     await prisma.gameVote.delete({ where: { id: existing.id } });
+    // Unvoting also removes the star
+    await prisma.gameWant.deleteMany({ where: { userId: user.id!, gameId } });
   } else {
     await prisma.gameVote.create({ data: { userId: user.id!, gameId } });
   }
@@ -234,8 +237,15 @@ export async function toggleGameWant(gameId: string, eventId: string) {
 
   if (existing) {
     await prisma.gameWant.delete({ where: { id: existing.id } });
+    // Unstarring does NOT remove the vote
   } else {
     await prisma.gameWant.create({ data: { userId: user.id!, gameId } });
+    // Starring also votes
+    await prisma.gameVote.upsert({
+      where: { userId_gameId: { userId: user.id!, gameId } },
+      update: {},
+      create: { userId: user.id!, gameId },
+    });
   }
 
   revalidatePath(`/events/${eventId}`);
