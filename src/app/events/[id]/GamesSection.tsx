@@ -150,31 +150,33 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
                 ) : (
                   <>
                     {!isPast && (
-                      <div className="flex flex-col gap-1 shrink-0">
+                      <div className="flex flex-col gap-1 shrink-0" style={{ width: "2.5rem" }}>
                         <form action={toggleGameVote.bind(null, g.id, eventId)}>
                           <button
                             type="submit"
                             title="I might be interested"
-                            className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-all hover:opacity-80 w-full justify-center"
-                            style={
-                              g.hasVoted
+                            className="flex items-center justify-center gap-1 text-xs font-semibold rounded-full transition-all hover:opacity-80 w-full"
+                            style={{
+                              height: "1.75rem",
+                              ...(g.hasVoted
                                 ? { backgroundColor: "var(--accent)", color: "#fff" }
-                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }
-                            }
+                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" })
+                            }}
                           >
-                            ▲ {g.voteCount > 0 ? g.voteCount : ""}
+                            ▲{g.voteCount > 0 ? ` ${g.voteCount}` : ""}
                           </button>
                         </form>
                         <form action={toggleGameWant.bind(null, g.id, eventId)}>
                           <button
                             type="submit"
                             title="I want to play this"
-                            className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-all hover:opacity-80 w-full justify-center"
-                            style={
-                              g.hasWanted
+                            className="flex items-center justify-center text-xs font-semibold rounded-full transition-all hover:opacity-80 w-full"
+                            style={{
+                              height: "1.75rem",
+                              ...(g.hasWanted
                                 ? { backgroundColor: "var(--success, #16a34a)", color: "#fff" }
-                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }
-                            }
+                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" })
+                            }}
                           >
                             ♥
                           </button>
