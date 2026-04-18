@@ -290,6 +290,7 @@ export default async function EventPage({
           userId={userId}
           isPast={isPast}
           isAdmin={userIsAdmin}
+          isAttending={isAttending}
           findGameTrigger={
             !isPast && event.attendances.length > 0 && event.games.length > 0 ? (
               <FindGameModal

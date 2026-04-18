@@ -20,10 +20,11 @@ type Props = {
   userId: string;
   isPast: boolean;
   isAdmin: boolean;
+  isAttending: boolean;
   findGameTrigger?: React.ReactNode;
 };
 
-export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGameTrigger }: Props) {
+export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttending, findGameTrigger }: Props) {
   const [filter, setFilter] = useState<"all" | "mine">("all");
   const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes" | "wants">("added");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -115,7 +116,7 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
       </div>
 
       <div className="px-5 py-4 space-y-4">
-        {!isPast && (
+        {!isPast && isAttending && (
           <form ref={addFormRef} onSubmit={handleAddGame} className="space-y-2">
             <div className="flex gap-2">
               <input
