@@ -46,16 +46,21 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin }: Props)
         className="px-5 py-3.5 flex items-center justify-between gap-2 flex-wrap"
         style={{ borderBottom: "1px solid var(--border-light)" }}
       >
-        <div className="flex items-center gap-2">
-          <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>
-            Games
-          </h2>
-          <span
-            className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-            style={{ backgroundColor: "var(--purple-light)", color: "var(--purple)" }}
-          >
-            {games.length}
-          </span>
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>
+              Games
+            </h2>
+            <span
+              className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+              style={{ backgroundColor: "var(--purple-light)", color: "var(--purple)" }}
+            >
+              {games.length}
+            </span>
+          </div>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+            Vote for the games you&apos;re excited to play
+          </p>
         </div>
 
         {games.length > 0 && (
@@ -136,6 +141,27 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin }: Props)
                   </form>
                 ) : (
                   <>
+                    {!isPast && (
+                      <form action={toggleGameVote.bind(null, g.id, eventId)} className="shrink-0">
+                        <button
+                          type="submit"
+                          className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-all hover:opacity-80"
+                          style={
+                            g.hasVoted
+                              ? { backgroundColor: "var(--accent)", color: "#fff" }
+                              : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }
+                          }
+                        >
+                          ▲ {g.voteCount > 0 ? g.voteCount : ""}
+                        </button>
+                      </form>
+                    )}
+                    {isPast && g.voteCount > 0 && (
+                      <span className="text-xs font-semibold px-2 py-1 rounded-full shrink-0"
+                        style={{ backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}>
+                        ▲ {g.voteCount}
+                      </span>
+                    )}
                     <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                       <span className="text-sm font-medium break-words" style={{ color: "var(--text-primary)" }}>
                         🎲 {g.name}
@@ -147,52 +173,29 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin }: Props)
                         )}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {!isPast && (
-                        <form action={toggleGameVote.bind(null, g.id, eventId)}>
+                    {!isPast && (g.userId === userId || isAdmin) && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        {g.userId === userId && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingId(g.id)}
+                            className="text-xs font-medium hover:underline"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            Edit
+                          </button>
+                        )}
+                        <form action={removeGame.bind(null, g.id, eventId)}>
                           <button
                             type="submit"
-                            className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition-all hover:opacity-80"
-                            style={
-                              g.hasVoted
-                                ? { backgroundColor: "var(--accent)", color: "#fff" }
-                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }
-                            }
+                            className="text-xs font-medium transition-colors hover:underline"
+                            style={{ color: "var(--danger)" }}
                           >
-                            ▲ {g.voteCount > 0 ? g.voteCount : ""}
+                            Remove
                           </button>
                         </form>
-                      )}
-                      {isPast && g.voteCount > 0 && (
-                        <span className="text-xs font-semibold px-2 py-1 rounded-full"
-                          style={{ backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}>
-                          ▲ {g.voteCount}
-                        </span>
-                      )}
-                      {!isPast && (g.userId === userId || isAdmin) && (
-                        <>
-                          {g.userId === userId && (
-                            <button
-                              type="button"
-                              onClick={() => setEditingId(g.id)}
-                              className="text-xs font-medium hover:underline"
-                              style={{ color: "var(--text-secondary)" }}
-                            >
-                              Edit
-                            </button>
-                          )}
-                          <form action={removeGame.bind(null, g.id, eventId)}>
-                            <button
-                              type="submit"
-                              className="text-xs font-medium transition-colors hover:underline"
-                              style={{ color: "var(--danger)" }}
-                            >
-                              Remove
-                            </button>
-                          </form>
-                        </>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </>
                 )}
               </li>
