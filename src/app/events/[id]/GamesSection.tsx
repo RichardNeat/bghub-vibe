@@ -115,6 +115,40 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
       </div>
 
       <div className="px-5 py-4 space-y-4">
+        {!isPast && (
+          <form ref={addFormRef} onSubmit={handleAddGame} className="space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                name="name"
+                required
+                placeholder="Add a game…"
+                autoComplete="off"
+                className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none transition"
+                style={{ border: "1px solid var(--border)" }}
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 shrink-0 shadow-sm"
+                style={{ backgroundColor: "var(--accent)" }}
+              >
+                Add
+              </button>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+              <input
+                type="checkbox"
+                checked={askOnAdd}
+                onChange={(e) => setAskOnAdd(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                Ask me if I want to play each game I add
+              </span>
+            </label>
+          </form>
+        )}
+
         {displayed.length === 0 ? (
           <p className="text-sm text-center py-2" style={{ color: "var(--text-muted)" }}>
             {filter === "mine"
@@ -244,39 +278,6 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
           </ul>
         )}
 
-        {!isPast && (
-          <form ref={addFormRef} onSubmit={handleAddGame} className="space-y-2 pt-1">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                name="name"
-                required
-                placeholder="Add a game…"
-                autoComplete="off"
-                className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none transition"
-                style={{ border: "1px solid var(--border)" }}
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 shrink-0 shadow-sm"
-                style={{ backgroundColor: "var(--accent)" }}
-              >
-                Add
-              </button>
-            </div>
-            <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
-              <input
-                type="checkbox"
-                checked={askOnAdd}
-                onChange={(e) => setAskOnAdd(e.target.checked)}
-                className="rounded"
-              />
-              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                Ask me if I want to play each game I add
-              </span>
-            </label>
-          </form>
-        )}
       </div>
 
       {/* Want to play popup */}
