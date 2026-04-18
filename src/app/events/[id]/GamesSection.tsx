@@ -60,9 +60,14 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
               {games.length}
             </span>
           </div>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Vote for the games you&apos;re excited to play
-          </p>
+          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+            <span className="text-xs flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+              <span className="font-bold" style={{ color: "var(--accent)" }}>▲</span> I&apos;m interested
+            </span>
+            <span className="text-xs flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+              <span className="font-bold" style={{ color: "var(--success, #16a34a)" }}>♥</span> I really want to play this
+            </span>
+          </div>
         </div>
 
         {games.length > 0 && (
