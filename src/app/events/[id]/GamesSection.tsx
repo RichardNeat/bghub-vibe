@@ -207,7 +207,7 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
                   </form>
                 ) : (
                   <>
-                    {!isPast && (
+                    {!isPast && isAttending && (
                       <div className="flex flex-col gap-1 shrink-0" style={{ width: "2.5rem" }}>
                         <form action={toggleGameVote.bind(null, g.id, eventId)}>
                           <button
