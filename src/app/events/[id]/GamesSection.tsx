@@ -116,6 +116,15 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
       </div>
 
       <div className="px-5 py-4 space-y-4">
+        {!isPast && !isAttending && (
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            Want to bring a game to this event?{" "}
+            <a href="#rsvp" className="underline font-medium" style={{ color: "var(--accent)" }}>
+              Register your attendance first!
+            </a>
+          </p>
+        )}
+
         {!isPast && isAttending && (
           <form ref={addFormRef} onSubmit={handleAddGame} className="space-y-2">
             <div className="flex gap-2">

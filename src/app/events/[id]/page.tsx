@@ -145,11 +145,13 @@ export default async function EventPage({
 
           {/* RSVP — hidden for past events */}
           {!isPast && (
-            <AttendanceButton
-              isAttending={isAttending}
-              hasGames={event.games.some((g) => g.userId === userId)}
-              action={toggleAttendanceWithId}
-            />
+            <div id="rsvp">
+              <AttendanceButton
+                isAttending={isAttending}
+                hasGames={event.games.some((g) => g.userId === userId)}
+                action={toggleAttendanceWithId}
+              />
+            </div>
           )}
         </div>
       </div>
