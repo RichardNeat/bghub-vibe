@@ -255,18 +255,19 @@ function EventList({ events, muted = false }: { events: EventItem[]; muted?: boo
                   {event.description}
                 </p>
               )}
-              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1">
                 {event.club && (
                   <span
-                    className="font-semibold mr-1.5 px-1.5 py-0.5 rounded"
+                    className="text-xs font-semibold px-1.5 py-0.5 rounded"
                     style={{ backgroundColor: "var(--purple-light)", color: "var(--purple)" }}
                   >
                     {event.club.name}
                   </span>
                 )}
-                by {event.creator?.name ?? "Deleted user"} ·{" "}
-                {event.date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-              </p>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  by {event.creator?.name ?? "Deleted user"} · {event.date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                </span>
+              </div>
             </div>
 
             {/* Attendee count */}

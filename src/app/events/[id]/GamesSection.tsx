@@ -305,14 +305,14 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
                     await toggleGameWant(popup.gameId, eventId);
                     setPopup(null);
                   }}
-                  className="flex-1 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
+                  className="flex-1 py-2 px-4 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
                   style={{ backgroundColor: "#ca8a04" }}
                 >
                   ★ Yes, I want to play it
                 </button>
                 <button
                   onClick={() => setPopup(null)}
-                  className="flex-1 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-80"
+                  className="flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all hover:opacity-80"
                   style={{ backgroundColor: "var(--border-light)", color: "var(--text-secondary)" }}
                 >
                   Not for me
