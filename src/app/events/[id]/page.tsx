@@ -284,6 +284,7 @@ export default async function EventPage({
             ...g,
             voteCount: g.votes.length,
             hasVoted: g.votes.some((v) => v.userId === userId),
+            wantCount: g.wants.length,
             hasWanted: g.wants.some((w) => w.userId === userId),
           }))}
           userId={userId}

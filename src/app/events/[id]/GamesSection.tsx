@@ -10,6 +10,7 @@ type Game = {
   user: { id: string; name: string | null };
   voteCount: number;
   hasVoted: boolean;
+  wantCount: number;
   hasWanted: boolean;
 };
 
@@ -24,7 +25,7 @@ type Props = {
 
 export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGameTrigger }: Props) {
   const [filter, setFilter] = useState<"all" | "mine">("all");
-  const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes">("added");
+  const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes" | "wants">("added");
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const addGameWithId = addGame.bind(null, eventId);
@@ -35,6 +36,7 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
       if (sortBy === "game") return a.name.localeCompare(b.name);
       if (sortBy === "user") return (a.user.name ?? "").localeCompare(b.user.name ?? "");
       if (sortBy === "votes") return b.voteCount - a.voteCount;
+      if (sortBy === "wants") return b.wantCount - a.wantCount;
       return 0;
     });
 
@@ -93,6 +95,7 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
             >
               <option value="added">Order added</option>
               <option value="votes">Most voted</option>
+              <option value="wants">Most wanted</option>
               <option value="game">Sort A–Z</option>
               <option value="user">Sort by person</option>
             </select>
@@ -178,7 +181,7 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, findGame
                                 : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" })
                             }}
                           >
-                            ♥
+                            ♥{g.wantCount > 0 ? ` ${g.wantCount}` : ""}
                           </button>
                         </form>
                       </div>
