@@ -19,6 +19,24 @@ model User {
   attendances   Attendance[]
   games         Game[]
   gameVotes     GameVote[]
+  clubs         UserClub[]
+}
+
+model Club {
+  id      String     @id @default(cuid())
+  name    String     @unique
+  members UserClub[]
+  events  Event[]
+}
+
+model UserClub {
+  id     String @id @default(cuid())
+  userId String
+  clubId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club   Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clubId])
 }
 
 model Account {
@@ -61,9 +79,11 @@ model Event {
   date        DateTime
   description String?
   location    String?
+  clubId      String?
   createdAt   DateTime     @default(now())
   creatorId   String?
   creator     User?        @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  club        Club?        @relation(fields: [clubId], references: [id], onDelete: SetNull)
   attendances Attendance[]
   games       Game[]
 }

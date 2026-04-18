@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { updateBggUsername } from "@/lib/actions";
+import { updateBggUsername, joinClub, leaveClub } from "@/lib/actions";
 import { DeleteAccountButton } from "./DeleteAccountButton";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,20 +10,27 @@ export default async function AccountPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      _count: {
-        select: {
-          events: { where: { date: { gt: new Date() } } },
-          attendances: true,
-          games: true,
+  const [user, allClubs] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        clubs: { include: { club: true } },
+        _count: {
+          select: {
+            events: { where: { date: { gt: new Date() } } },
+            attendances: true,
+            games: true,
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.club.findMany({ orderBy: { name: "asc" } }),
+  ]);
 
   if (!user) redirect("/");
+
+  const joinedClubIds = new Set(user.clubs.map((uc) => uc.clubId));
+  const availableClubs = allClubs.filter((c) => !joinedClubIds.has(c.id));
 
   return (
     <div className="space-y-6 max-w-xl">
@@ -126,6 +133,62 @@ export default async function AccountPage() {
               boardgamegeek.com/collection/user/{user.bggUsername}
             </a>
           </p>
+        )}
+      </div>
+
+      {/* Clubs */}
+      <div
+        className="rounded-xl shadow-sm p-6 space-y-4"
+        style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
+      >
+        <div>
+          <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>My clubs</h2>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>
+            Events from clubs you&apos;re in will appear on your events page.
+          </p>
+        </div>
+
+        {user.clubs.length > 0 && (
+          <ul className="space-y-2">
+            {user.clubs.map(({ club }) => (
+              <li key={club.id} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
+                style={{ backgroundColor: "var(--bg-page)" }}>
+                <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{club.name}</span>
+                <form action={leaveClub.bind(null, club.id)}>
+                  <button type="submit" className="text-xs font-medium hover:underline" style={{ color: "var(--danger)" }}>
+                    Leave
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {availableClubs.length > 0 && (
+          <form action={async (fd) => { "use server"; await joinClub(fd.get("clubId") as string); }} className="flex gap-2">
+            <select
+              name="clubId"
+              required
+              className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none"
+              style={{ border: "1px solid var(--border)" }}
+            >
+              <option value="">Join a club…</option>
+              {availableClubs.map((club) => (
+                <option key={club.id} value={club.id}>{club.name}</option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 shrink-0"
+              style={{ backgroundColor: "var(--accent)" }}
+            >
+              Join
+            </button>
+          </form>
+        )}
+
+        {user.clubs.length === 0 && availableClubs.length === 0 && (
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>No clubs available.</p>
         )}
       </div>
 

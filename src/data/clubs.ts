@@ -20,9 +20,23 @@ export const REGIONS = [
   "Scotland",
   "Wales",
   "Northern Ireland",
+  "Other",
 ] as const;
 
 export const clubs: Club[] = [
+  // OTHER
+  {
+    name: "BGC",
+    city: "",
+    region: "Other",
+    description: "It's all bugs",
+  },
+  {
+    name: "Soggycon",
+    city: "",
+    region: "Other",
+    description: "Don't ask about the origins of the name",
+  },
   // LONDON
   {
     name: "London on Board",

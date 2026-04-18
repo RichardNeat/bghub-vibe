@@ -95,9 +95,11 @@ export default function ClubsPage() {
                       <h3 className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
                         {club.name}
                       </h3>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                        📍 {club.city}
-                      </p>
+                      {club.city && (
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                          📍 {club.city}
+                        </p>
+                      )}
                     </div>
                     <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                       {club.description}

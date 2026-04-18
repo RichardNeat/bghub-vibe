@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createEvent } from "@/lib/actions";
 import { DateTimeInput } from "@/components/DateTimeInput";
@@ -5,10 +6,55 @@ import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 import Link from "next/link";
 
 export default async function EventsPage() {
+  const session = await auth();
+  const userId = session?.user?.id!;
+
+  const userWithClubs = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { clubs: { include: { club: true } } },
+  });
+
+  const userClubs = userWithClubs?.clubs.map((uc) => uc.club) ?? [];
+
+  if (userClubs.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Events</h1>
+        </div>
+        <div
+          className="text-center py-20 rounded-xl space-y-4"
+          style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
+        >
+          <div className="text-4xl">🎲</div>
+          <div>
+            <p className="font-semibold text-lg" style={{ color: "var(--text-primary)" }}>
+              You&apos;re not in any clubs yet
+            </p>
+            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+              Join a club to see and create events
+            </p>
+          </div>
+          <Link
+            href="/clubs"
+            className="inline-block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
+            style={{ backgroundColor: "var(--accent)" }}
+          >
+            Browse clubs →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const clubIds = userClubs.map((c) => c.id);
+
   const events = await prisma.event.findMany({
+    where: { clubId: { in: clubIds } },
     orderBy: { date: "asc" },
     include: {
       creator: { select: { name: true } },
+      club: { select: { name: true } },
       _count: { select: { attendances: true } },
     },
   });
@@ -18,7 +64,6 @@ export default async function EventsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
@@ -57,6 +102,22 @@ export default async function EventsPage() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
+                  Club
+                </label>
+                <select
+                  name="clubId"
+                  required
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
+                  style={{ border: "1px solid var(--border)" }}
+                >
+                  <option value="">Select a club…</option>
+                  {userClubs.map((club) => (
+                    <option key={club.id} value={club.id}>{club.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
                   Event name
                 </label>
                 <input
@@ -67,16 +128,16 @@ export default async function EventsPage() {
                   style={{ border: "1px solid var(--border)" }}
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
-                  Date &amp; time
-                </label>
-                <DateTimeInput
-                  name="date"
-                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
-                  style={{ border: "1px solid var(--border)" }}
-                />
-              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
+                Date &amp; time
+              </label>
+              <DateTimeInput
+                name="date"
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
+                style={{ border: "1px solid var(--border)" }}
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
@@ -114,7 +175,6 @@ export default async function EventsPage() {
         </div>
       </details>
 
-      {/* Upcoming events */}
       {upcoming.length === 0 && past.length === 0 ? (
         <div
           className="text-center py-20 rounded-xl"
@@ -154,6 +214,7 @@ type EventItem = {
   description: string | null;
   date: Date;
   creator: { name: string | null } | null;
+  club: { name: string } | null;
   _count: { attendances: number };
 };
 
@@ -174,30 +235,19 @@ function EventList({ events, muted = false }: { events: EventItem[]; muted?: boo
             {/* Date badge */}
             <div
               className="shrink-0 w-14 text-center rounded-lg py-1.5"
-              style={{
-                backgroundColor: muted ? "var(--border-light)" : "var(--accent-light)",
-              }}
+              style={{ backgroundColor: muted ? "var(--border-light)" : "var(--accent-light)" }}
             >
-              <div
-                className="text-xs font-bold uppercase"
-                style={{ color: muted ? "var(--text-muted)" : "var(--accent)" }}
-              >
+              <div className="text-xs font-bold uppercase" style={{ color: muted ? "var(--text-muted)" : "var(--accent)" }}>
                 {event.date.toLocaleDateString("en-US", { month: "short" })}
               </div>
-              <div
-                className="text-2xl font-bold leading-none"
-                style={{ color: muted ? "var(--text-secondary)" : "var(--accent)" }}
-              >
+              <div className="text-2xl font-bold leading-none" style={{ color: muted ? "var(--text-secondary)" : "var(--accent)" }}>
                 {event.date.getDate()}
               </div>
             </div>
 
             {/* Details */}
             <div className="flex-1 min-w-0">
-              <h2
-                className="font-semibold truncate group-hover:underline"
-                style={{ color: "var(--text-primary)" }}
-              >
+              <h2 className="font-semibold truncate group-hover:underline" style={{ color: "var(--text-primary)" }}>
                 {event.name}
               </h2>
               {event.description && (
@@ -206,6 +256,14 @@ function EventList({ events, muted = false }: { events: EventItem[]; muted?: boo
                 </p>
               )}
               <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                {event.club && (
+                  <span
+                    className="font-semibold mr-1.5 px-1.5 py-0.5 rounded"
+                    style={{ backgroundColor: "var(--purple-light)", color: "var(--purple)" }}
+                  >
+                    {event.club.name}
+                  </span>
+                )}
                 by {event.creator?.name ?? "Deleted user"} ·{" "}
                 {event.date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
               </p>
@@ -215,10 +273,7 @@ function EventList({ events, muted = false }: { events: EventItem[]; muted?: boo
             <div className="shrink-0 text-right">
               <span
                 className="text-xs font-medium px-2.5 py-1 rounded-full"
-                style={{
-                  backgroundColor: "var(--border-light)",
-                  color: "var(--text-secondary)",
-                }}
+                style={{ backgroundColor: "var(--border-light)", color: "var(--text-secondary)" }}
               >
                 {event._count.attendances} going
               </span>

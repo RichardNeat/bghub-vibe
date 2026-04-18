@@ -21,8 +21,9 @@ export async function createEvent(formData: FormData) {
   const date = formData.get("date") as string;
   const description = (formData.get("description") as string)?.trim();
   const location = (formData.get("location") as string)?.trim();
+  const clubId = (formData.get("clubId") as string)?.trim();
 
-  if (!name || !date) return;
+  if (!name || !date || !clubId) return;
 
   const eventDate = new Date(date);
   if (eventDate <= new Date()) return;
@@ -33,6 +34,7 @@ export async function createEvent(formData: FormData) {
       date: eventDate,
       description: description || null,
       location: location || null,
+      clubId,
       creatorId: user.id!,
     },
   });
@@ -183,4 +185,22 @@ export async function updateBggUsername(formData: FormData) {
   const bggUsername = (formData.get("bggUsername") as string)?.trim() || null;
   await prisma.user.update({ where: { id: user.id! }, data: { bggUsername } });
   revalidatePath("/account");
+}
+
+export async function joinClub(clubId: string) {
+  const user = await requireUser();
+  await prisma.userClub.upsert({
+    where: { userId_clubId: { userId: user.id!, clubId } },
+    update: {},
+    create: { userId: user.id!, clubId },
+  });
+  revalidatePath("/account");
+  revalidatePath("/events");
+}
+
+export async function leaveClub(clubId: string) {
+  const user = await requireUser();
+  await prisma.userClub.deleteMany({ where: { userId: user.id!, clubId } });
+  revalidatePath("/account");
+  revalidatePath("/events");
 }
