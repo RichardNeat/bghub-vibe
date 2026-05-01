@@ -740,15 +740,16 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
                               onClick={() => setLoggingPlayId(g.id)}
                               className="text-xs font-semibold px-1.5 py-0.5 rounded-full hover:opacity-75 transition-opacity"
                               style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}
+                              title="Log another play"
                             >
-                              ✓ {g.plays.length}×
+                              ✓ {g.plays.length}× +
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={() => setLoggingPlayId(g.id)}
-                              className="text-xs hover:underline"
-                              style={{ color: "var(--text-muted)" }}
+                              className="text-xs font-semibold px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity"
+                              style={{ backgroundColor: "var(--accent-light)", color: "var(--accent)" }}
                             >
                               + log play
                             </button>
