@@ -28,11 +28,11 @@ export function AttendanceButton({
           <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
             Are you sure you want to cancel?
           </p>
-          {hasGames && (
-            <p className="text-sm mt-1" style={{ color: "var(--danger)" }}>
-              All the games you&apos;ve added to this event will be removed from the list.
-            </p>
-          )}
+          <p className="text-sm mt-1" style={{ color: "var(--danger)" }}>
+            {hasGames
+              ? "All the games you've added to this event will be removed from the list."
+              : "Note: if you add games to an event and then cancel your attendance, they will be automatically removed from the list."}
+          </p>
         </div>
         <div className="flex gap-2">
           <form action={submit}>
@@ -58,7 +58,7 @@ export function AttendanceButton({
   }
 
   return (
-    <div className="mt-5">
+    <div className="mt-5 space-y-1.5">
       <button
         type="button"
         onClick={() => (isAttending ? setShowConfirm(true) : submit())}
@@ -71,6 +71,11 @@ export function AttendanceButton({
       >
         {isAttending ? "✓ I'm attending — click to cancel" : "RSVP — I'll be there"}
       </button>
+      {isAttending && (
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          Cancelling will remove any games you&apos;ve added to this event.
+        </p>
+      )}
     </div>
   );
 }
