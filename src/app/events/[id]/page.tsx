@@ -28,8 +28,8 @@ export default async function EventPage({
       games: {
         include: {
           user: { select: { id: true, name: true } },
-          votes: { select: { userId: true } },
-          wants: { select: { userId: true } },
+          votes: { select: { userId: true, user: { select: { name: true } } } },
+          wants: { select: { userId: true, user: { select: { name: true } } } },
         },
         orderBy: { id: "asc" },
       },
@@ -271,8 +271,10 @@ export default async function EventPage({
             ...g,
             voteCount: g.votes.length,
             hasVoted: g.votes.some((v) => v.userId === userId),
+            voters: g.votes.map((v) => v.user.name ?? "Unknown"),
             wantCount: g.wants.length,
             hasWanted: g.wants.some((w) => w.userId === userId),
+            wanters: g.wants.map((w) => w.user.name ?? "Unknown"),
           }))}
           userId={userId}
           isPast={isPast}
