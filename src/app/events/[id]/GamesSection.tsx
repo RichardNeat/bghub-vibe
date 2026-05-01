@@ -729,10 +729,16 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
                       </span>
                     )}
                     <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-sm font-medium break-words" style={{ color: "var(--text-primary)" }}>
-                          🎲 {g.name}
-                        </span>
+                      <span className="text-sm font-medium break-words" style={{ color: "var(--text-primary)" }}>
+                        🎲 {g.name}
+                      </span>
+                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        by {g.user.name}
+                        {g.userId === userId && (
+                          <span className="ml-1 font-semibold" style={{ color: "var(--accent)" }}>(you)</span>
+                        )}
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
                         {g.plays.length > 0 && (
                           <span
                             className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
@@ -752,12 +758,6 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
                           </button>
                         )}
                       </div>
-                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                        by {g.user.name}
-                        {g.userId === userId && (
-                          <span className="ml-1 font-semibold" style={{ color: "var(--accent)" }}>(you)</span>
-                        )}
-                      </span>
                     </div>
                     {!isPast && (g.userId === userId || isAdmin) && (
                       <div className="relative shrink-0">
