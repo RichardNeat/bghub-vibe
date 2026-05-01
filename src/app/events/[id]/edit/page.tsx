@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { updateEvent } from "@/lib/actions";
 import { isEventOver } from "@/lib/eventUtils";
 import { DateTimeInput } from "@/components/DateTimeInput";
+import { EndDateInput } from "@/components/EndDateInput";
 import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 import Link from "next/link";
 
@@ -76,10 +77,11 @@ export default async function EditEventPage({
             <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
               End date <span className="normal-case font-normal">(optional, for multi-day events)</span>
             </label>
-            <input
-              type="date"
+            <EndDateInput
               name="endDate"
+              startDateInputName="date"
               defaultValue={defaultEndDate}
+              initialMin={defaultDate.split("T")[0]}
               className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
               style={{ border: "1px solid var(--border)" }}
             />

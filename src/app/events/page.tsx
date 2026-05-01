@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createEvent } from "@/lib/actions";
 import { isEventOver } from "@/lib/eventUtils";
 import { DateTimeInput } from "@/components/DateTimeInput";
+import { EndDateInput } from "@/components/EndDateInput";
 import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 import Link from "next/link";
 
@@ -65,7 +66,9 @@ export default async function EventsPage() {
     },
   });
 
-  const upcoming = events.filter((e) => !isEventOver(e));
+  const now = new Date();
+  const happening = events.filter((e) => e.date <= now && !isEventOver(e));
+  const upcoming = events.filter((e) => e.date > now && !isEventOver(e));
   const past = events.filter((e) => isEventOver(e));
 
   return (
@@ -76,7 +79,7 @@ export default async function EventsPage() {
             Events
           </h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>
-            {upcoming.length} upcoming
+            {happening.length > 0 ? `${happening.length} happening now · ` : ""}{upcoming.length} upcoming
           </p>
         </div>
       </div>
@@ -149,9 +152,9 @@ export default async function EventsPage() {
               <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
                 End date <span className="normal-case font-normal">(optional, for multi-day events)</span>
               </label>
-              <input
-                type="date"
+              <EndDateInput
                 name="endDate"
+                startDateInputName="date"
                 className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
                 style={{ border: "1px solid var(--border)" }}
               />
@@ -192,7 +195,7 @@ export default async function EventsPage() {
         </div>
       </details>
 
-      {upcoming.length === 0 && past.length === 0 ? (
+      {happening.length === 0 && upcoming.length === 0 && past.length === 0 ? (
         <div
           className="text-center py-20 rounded-xl"
           style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
@@ -203,6 +206,21 @@ export default async function EventsPage() {
         </div>
       ) : (
         <>
+          {happening.length > 0 && (
+            <section className="space-y-3">
+              <h2
+                className="text-xs font-semibold uppercase tracking-widest flex items-center gap-2"
+                style={{ color: "var(--success)" }}
+              >
+                <span
+                  className="inline-block w-2 h-2 rounded-full animate-pulse"
+                  style={{ backgroundColor: "var(--success)" }}
+                />
+                Happening Now
+              </h2>
+              <EventList events={happening} happening />
+            </section>
+          )}
           {upcoming.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
@@ -236,7 +254,7 @@ type EventItem = {
   _count: { attendances: number };
 };
 
-function EventList({ events, muted = false }: { events: EventItem[]; muted?: boolean }) {
+function EventList({ events, muted = false, happening = false }: { events: EventItem[]; muted?: boolean; happening?: boolean }) {
   return (
     <ul className="space-y-2">
       {events.map((event) => (
@@ -246,19 +264,31 @@ function EventList({ events, muted = false }: { events: EventItem[]; muted?: boo
             className="group flex items-center gap-4 rounded-xl px-5 py-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-px"
             style={{
               backgroundColor: "var(--bg-card)",
-              border: "1px solid var(--border-light)",
+              border: happening ? "1px solid var(--success)" : "1px solid var(--border-light)",
               opacity: muted ? 0.7 : 1,
             }}
           >
             {/* Date badge */}
             <div
               className="shrink-0 w-14 text-center rounded-lg py-1.5"
-              style={{ backgroundColor: muted ? "var(--border-light)" : "var(--accent-light)" }}
+              style={{
+                backgroundColor: muted
+                  ? "var(--border-light)"
+                  : happening
+                  ? "var(--success-light)"
+                  : "var(--accent-light)",
+              }}
             >
-              <div className="text-xs font-bold uppercase" style={{ color: muted ? "var(--text-muted)" : "var(--accent)" }}>
+              <div
+                className="text-xs font-bold uppercase"
+                style={{ color: muted ? "var(--text-muted)" : happening ? "var(--success)" : "var(--accent)" }}
+              >
                 {event.date.toLocaleDateString("en-US", { month: "short" })}
               </div>
-              <div className="text-2xl font-bold leading-none" style={{ color: muted ? "var(--text-secondary)" : "var(--accent)" }}>
+              <div
+                className="text-2xl font-bold leading-none"
+                style={{ color: muted ? "var(--text-secondary)" : happening ? "var(--success)" : "var(--accent)" }}
+              >
                 {event.date.getDate()}
               </div>
             </div>
