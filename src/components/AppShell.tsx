@@ -34,19 +34,29 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
             <ThemeToggle />
             <div className="w-px h-5 bg-white/20 mx-1" />
-            {session.user.image && (
-              <Image
-                src={session.user.image}
-                alt={session.user.name ?? ""}
-                width={30}
-                height={30}
-                className="rounded-full ring-2 ring-white/20"
-              />
-            )}
+            <Link
+              href="/account"
+              className="rounded-full ring-2 ring-white/20 hover:ring-white/50 transition-all shrink-0"
+              title="Account"
+            >
+              {session.user.image ? (
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name ?? ""}
+                  width={30}
+                  height={30}
+                  className="rounded-full block"
+                />
+              ) : (
+                <span className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-sm font-bold text-white bg-white/20">
+                  {(session.user.name ?? "?")[0].toUpperCase()}
+                </span>
+              )}
+            </Link>
             <span className="text-sm text-white/70 hidden sm:block">{session.user.name}</span>
             <Link
               href="/account"
-              className="text-xs font-medium px-3 py-1.5 rounded-md transition-colors text-white/70 hover:text-white hover:bg-white/10"
+              className="text-xs font-medium px-3 py-1.5 rounded-md transition-colors text-white/70 hover:text-white hover:bg-white/10 hidden sm:block"
             >
               Account
             </Link>
