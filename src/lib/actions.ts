@@ -155,6 +155,19 @@ export async function updateGame(gameId: string, eventId: string, formData: Form
   revalidatePath(`/events/${eventId}`);
 }
 
+export async function toggleGamePlayed(gameId: string, eventId: string) {
+  const user = await requireUser();
+
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { creatorId: true } });
+  if (!event || (event.creatorId !== user.id && !isAdmin(user.email))) return;
+
+  const game = await prisma.game.findUnique({ where: { id: gameId }, select: { played: true } });
+  if (!game) return;
+
+  await prisma.game.update({ where: { id: gameId }, data: { played: !game.played } });
+  revalidatePath(`/events/${eventId}`);
+}
+
 export async function removeGame(gameId: string, eventId: string) {
   const user = await requireUser();
 

@@ -104,6 +104,7 @@ model Game {
   name    String
   userId  String
   eventId String
+  played  Boolean    @default(false)
   user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   event   Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
   votes   GameVote[]

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { addGame, removeGame, toggleGameVote, toggleGameWant, updateGame } from "@/lib/actions";
+import { startTransition, useEffect, useOptimistic, useRef, useState } from "react";
+import { addGame, removeGame, toggleGamePlayed, toggleGameVote, toggleGameWant, updateGame } from "@/lib/actions";
 
 type Game = {
   id: string;
@@ -14,6 +14,7 @@ type Game = {
   wantCount: number;
   hasWanted: boolean;
   wanters: string[];
+  played: boolean;
 };
 
 type Props = {
@@ -22,18 +23,52 @@ type Props = {
   userId: string;
   isPast: boolean;
   isAdmin: boolean;
+  isCreator: boolean;
   isAttending: boolean;
   findGameTrigger?: React.ReactNode;
 };
 
-export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttending, findGameTrigger }: Props) {
+type BggResult = { id: string; name: string; year: string | null };
+
+export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreator, isAttending, findGameTrigger }: Props) {
   const [filter, setFilter] = useState<"all" | "mine">("all");
   const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes" | "wants">("added");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [askOnAdd, setAskOnAdd] = useState(true);
   const [popup, setPopup] = useState<{ gameId: string; gameName: string } | null>(null);
-  const [namesPanel, setNamesPanel] = useState<string | null>(null); // `${gameId}-votes` or `${gameId}-wants`
+  const [namesPanel, setNamesPanel] = useState<string | null>(null);
+  const [gameInput, setGameInput] = useState("");
+  const [bggResults, setBggResults] = useState<BggResult[]>([]);
+  const [showBggDropdown, setShowBggDropdown] = useState(false);
   const addFormRef = useRef<HTMLFormElement>(null);
+  const bggDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [optimisticGames, applyOptimistic] = useOptimistic(
+    games,
+    (state: Game[], { gameId, action }: { gameId: string; action: "vote" | "want" }) =>
+      state.map((g) => {
+        if (g.id !== gameId) return g;
+        if (action === "vote") {
+          const toggled = !g.hasVoted;
+          return {
+            ...g,
+            hasVoted: toggled,
+            voteCount: toggled ? g.voteCount + 1 : g.voteCount - 1,
+            hasWanted: toggled ? g.hasWanted : false,
+            wantCount: !toggled && g.hasWanted ? g.wantCount - 1 : g.wantCount,
+          };
+        } else {
+          const toggled = !g.hasWanted;
+          return {
+            ...g,
+            hasWanted: toggled,
+            wantCount: toggled ? g.wantCount + 1 : g.wantCount - 1,
+            hasVoted: toggled ? true : g.hasVoted,
+            voteCount: toggled && !g.hasVoted ? g.voteCount + 1 : g.voteCount,
+          };
+        }
+      })
+  );
 
   useEffect(() => {
     if (!namesPanel) return;
@@ -47,17 +82,53 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
     setNamesPanel((prev) => (prev === key ? null : key));
   }
 
+  function handleGameInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setGameInput(val);
+    if (bggDebounceRef.current) clearTimeout(bggDebounceRef.current);
+    if (val.length < 2) { setBggResults([]); setShowBggDropdown(false); return; }
+    bggDebounceRef.current = setTimeout(async () => {
+      const res = await fetch(`/api/bgg-search?q=${encodeURIComponent(val)}`);
+      const data: BggResult[] = await res.json();
+      setBggResults(data);
+      setShowBggDropdown(data.length > 0);
+    }, 350);
+  }
+
+  function selectBggGame(name: string) {
+    setGameInput(name);
+    setShowBggDropdown(false);
+    setBggResults([]);
+  }
+
   const addGameWithId = addGame.bind(null, eventId);
 
   async function handleAddGame(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const result = await addGameWithId(formData);
+    setGameInput("");
+    setBggResults([]);
+    setShowBggDropdown(false);
     addFormRef.current?.reset();
     if (result && askOnAdd) setPopup(result);
   }
 
-  const displayed = [...games]
+  async function handleVote(gameId: string) {
+    startTransition(async () => {
+      applyOptimistic({ gameId, action: "vote" });
+      await toggleGameVote(gameId, eventId);
+    });
+  }
+
+  async function handleWant(gameId: string) {
+    startTransition(async () => {
+      applyOptimistic({ gameId, action: "want" });
+      await toggleGameWant(gameId, eventId);
+    });
+  }
+
+  const displayed = [...optimisticGames]
     .filter((g) => filter === "all" || g.userId === userId)
     .sort((a, b) => {
       if (sortBy === "game") return a.name.localeCompare(b.name);
@@ -150,15 +221,40 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
         {!isPast && isAttending && (
           <form ref={addFormRef} onSubmit={handleAddGame} className="space-y-2">
             <div className="flex gap-2">
-              <input
-                type="text"
-                name="name"
-                required
-                placeholder="Add a game…"
-                autoComplete="off"
-                className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none transition"
-                style={{ border: "1px solid var(--border)" }}
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  name="name"
+                  value={gameInput}
+                  onChange={handleGameInputChange}
+                  onBlur={() => setTimeout(() => setShowBggDropdown(false), 150)}
+                  onFocus={() => bggResults.length > 0 && setShowBggDropdown(true)}
+                  required
+                  placeholder="Add a game…"
+                  autoComplete="off"
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
+                  style={{ border: "1px solid var(--border)" }}
+                />
+                {showBggDropdown && bggResults.length > 0 && (
+                  <div
+                    className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg shadow-lg overflow-hidden"
+                    style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
+                  >
+                    {bggResults.map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onMouseDown={() => selectBggGame(r.name)}
+                        className="w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 hover:opacity-80 transition-opacity"
+                        style={{ color: "var(--text-primary)", borderTop: "1px solid var(--border-light)" }}
+                      >
+                        <span>🎲 {r.name}</span>
+                        {r.year && <span className="text-xs shrink-0" style={{ color: "var(--text-muted)" }}>{r.year}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 type="submit"
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 shrink-0 shadow-sm"
@@ -231,20 +327,19 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
                   <>
                     {!isPast && isAttending && (
                       <div className="flex flex-col gap-1 shrink-0 relative">
-                        {/* Vote button: icon = action, count = show names */}
+                        {/* Vote button */}
                         <div className="flex rounded-full overflow-hidden text-xs font-semibold" style={{ height: "1.75rem" }}>
-                          <form action={toggleGameVote.bind(null, g.id, eventId)}>
-                            <button
-                              type="submit"
-                              title="I might be interested"
-                              className="flex items-center justify-center px-2 h-full transition-all hover:opacity-80"
-                              style={g.hasVoted
-                                ? { backgroundColor: "var(--accent)", color: "#fff" }
-                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}
-                            >
-                              ▲
-                            </button>
-                          </form>
+                          <button
+                            type="button"
+                            title="I might be interested"
+                            onClick={() => handleVote(g.id)}
+                            className="flex items-center justify-center px-2 h-full transition-all hover:opacity-80"
+                            style={g.hasVoted
+                              ? { backgroundColor: "var(--accent)", color: "#fff" }
+                              : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}
+                          >
+                            ▲
+                          </button>
                           {g.voteCount > 0 && (
                             <button
                               type="button"
@@ -258,20 +353,19 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
                             </button>
                           )}
                         </div>
-                        {/* Want button: icon = action, count = show names */}
+                        {/* Want button */}
                         <div className="flex rounded-full overflow-hidden text-xs font-semibold" style={{ height: "1.75rem" }}>
-                          <form action={toggleGameWant.bind(null, g.id, eventId)}>
-                            <button
-                              type="submit"
-                              title="I want to play this"
-                              className="flex items-center justify-center px-2 h-full transition-all hover:opacity-80"
-                              style={g.hasWanted
-                                ? { backgroundColor: "#ca8a04", color: "#fff" }
-                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}
-                            >
-                              ★
-                            </button>
-                          </form>
+                          <button
+                            type="button"
+                            title="I want to play this"
+                            onClick={() => handleWant(g.id)}
+                            className="flex items-center justify-center px-2 h-full transition-all hover:opacity-80"
+                            style={g.hasWanted
+                              ? { backgroundColor: "#ca8a04", color: "#fff" }
+                              : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}
+                          >
+                            ★
+                          </button>
                           {g.wantCount > 0 && (
                             <button
                               type="button"
@@ -285,10 +379,10 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
                             </button>
                           )}
                         </div>
-                        {/* Floating names popup */}
+                        {/* Floating names popup — positioned below button column */}
                         {(namesPanel === `${g.id}-votes` || namesPanel === `${g.id}-wants`) && (
                           <div
-                            className="absolute left-full top-0 ml-2 z-50 rounded-lg shadow-lg p-3 min-w-[140px] max-w-[220px]"
+                            className="absolute top-full left-0 mt-1 z-50 rounded-lg shadow-lg p-3 min-w-[140px] max-w-[200px]"
                             style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -317,9 +411,19 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
                       </span>
                     )}
                     <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                      <span className="text-sm font-medium break-words" style={{ color: "var(--text-primary)" }}>
-                        🎲 {g.name}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm font-medium break-words" style={{ color: "var(--text-primary)" }}>
+                          🎲 {g.name}
+                        </span>
+                        {g.played && (
+                          <span
+                            className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
+                            style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}
+                          >
+                            ✓ Played
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                         by {g.user.name}
                         {g.userId === userId && (
@@ -327,29 +431,42 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
                         )}
                       </span>
                     </div>
-                    {!isPast && (g.userId === userId || isAdmin) && (
-                      <div className="flex items-center gap-2 shrink-0">
-                        {g.userId === userId && (
-                          <button
-                            type="button"
-                            onClick={() => setEditingId(g.id)}
-                            className="text-xs font-medium hover:underline"
-                            style={{ color: "var(--text-secondary)" }}
-                          >
-                            Edit
-                          </button>
-                        )}
-                        <form action={removeGame.bind(null, g.id, eventId)}>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isPast && (isCreator || isAdmin) && (
+                        <form action={toggleGamePlayed.bind(null, g.id, eventId)}>
                           <button
                             type="submit"
-                            className="text-xs font-medium transition-colors hover:underline"
-                            style={{ color: "var(--danger)" }}
+                            className="text-xs font-medium hover:underline transition-colors"
+                            style={{ color: g.played ? "var(--success)" : "var(--text-muted)" }}
                           >
-                            Remove
+                            {g.played ? "✓ Played" : "Mark played"}
                           </button>
                         </form>
-                      </div>
-                    )}
+                      )}
+                      {!isPast && (g.userId === userId || isAdmin) && (
+                        <>
+                          {g.userId === userId && (
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(g.id)}
+                              className="text-xs font-medium hover:underline"
+                              style={{ color: "var(--text-secondary)" }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          <form action={removeGame.bind(null, g.id, eventId)}>
+                            <button
+                              type="submit"
+                              className="text-xs font-medium transition-colors hover:underline"
+                              style={{ color: "var(--danger)" }}
+                            >
+                              Remove
+                            </button>
+                          </form>
+                        </>
+                      )}
+                    </div>
                   </>
                 )}
               </li>

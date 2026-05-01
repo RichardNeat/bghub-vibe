@@ -6,6 +6,7 @@ import { DeleteEventButton } from "./DeleteEventButton";
 import { GamesSection } from "./GamesSection";
 import { FindGameModal } from "./FindGameModal";
 import { AttendanceButton } from "./AttendanceButton";
+import { EventActions } from "./EventActions";
 import Link from "next/link";
 
 export default async function EventPage({
@@ -141,6 +142,13 @@ export default async function EventPage({
                 {icon} {text}
               </span>
             ))}
+          </div>
+
+          {/* Share + Calendar */}
+          <div className="mt-4">
+            <EventActions
+              calendarUrl={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.name)}&dates=${event.date.toISOString().replace(/[-:]/g, "").split(".")[0]}Z/${new Date(event.date.getTime() + 3 * 60 * 60 * 1000).toISOString().replace(/[-:]/g, "").split(".")[0]}Z${event.location ? `&location=${encodeURIComponent(event.location)}` : ""}${event.description ? `&details=${encodeURIComponent(event.description)}` : ""}`}
+            />
           </div>
 
           {/* RSVP — hidden for past events */}
@@ -279,6 +287,7 @@ export default async function EventPage({
           userId={userId}
           isPast={isPast}
           isAdmin={userIsAdmin}
+          isCreator={isCreator}
           isAttending={isAttending}
           findGameTrigger={
             !isPast && event.attendances.length > 0 && event.games.length > 0 ? (
