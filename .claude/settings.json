@@ -2,6 +2,9 @@
   "permissions": {
     "additionalDirectories": [
       "/Users/richneat/Dev/sandbox/claude-training/src/app/events/[id]"
+    ],
+    "allow": [
+      "Bash(find /Users/richneat/Dev/sandbox/claude-training/public\" -name \"favicon*\" 2>/dev/null; find /Users/richneat/Dev/sandbox/claude-training -name \"favicon*\" -not -path \"*/node_modules/*\" 2>/dev/null)"
     ]
   }
 }

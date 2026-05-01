@@ -14,7 +14,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between">
           <a
             href="/events"
-            className="font-bold text-lg tracking-tight text-white flex items-center gap-2 hover:opacity-80 transition-opacity"
+            className="font-bold text-lg tracking-tight text-white flex items-center gap-2 hover:opacity-80 transition-opacity whitespace-nowrap shrink-0"
           >
             🎲 BGHub
           </a>
