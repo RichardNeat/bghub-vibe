@@ -126,29 +126,41 @@ export default async function AccountPage() {
         className="rounded-xl shadow-sm p-6 space-y-4"
         style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
       >
-        <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>Trophies</h2>
-        {earnedTrophies.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            No trophies yet — play some games and win some awards!
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {earnedTrophies.map(([key, { emoji, label }]) => (
-              <TrophyPopover key={key} trophyKey={key} count={myTrophies[key]} className="block w-full text-left rounded-xl hover:opacity-80 transition-opacity">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>Trophies</h2>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {earnedTrophies.length} / {Object.keys(TROPHY_META).length} earned
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {(Object.entries(TROPHY_META) as [TrophyKey, (typeof TROPHY_META)[TrophyKey]][]).map(([key, { emoji, label }]) => {
+            const count = myTrophies[key];
+            const earned = count > 0;
+            return (
+              <TrophyPopover key={key} trophyKey={key} count={count} className="block w-full text-left rounded-xl hover:opacity-80 transition-opacity">
                 <div
                   className="rounded-xl p-4 text-center space-y-1"
-                  style={{ backgroundColor: "var(--bg-page)", border: "1px solid var(--border-light)" }}
+                  style={{
+                    backgroundColor: "var(--bg-page)",
+                    border: earned ? "1px solid var(--border-light)" : "1px dashed var(--border)",
+                  }}
                 >
-                  <div className="text-2xl">{emoji}</div>
-                  <div className="text-xl font-bold" style={{ color: "var(--accent)" }}>
-                    ×{myTrophies[key]}
+                  <div className="text-2xl" style={earned ? undefined : { filter: "grayscale(1)", opacity: 0.4 }}>
+                    {emoji}
                   </div>
-                  <div className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</div>
+                  {earned ? (
+                    <div className="text-xl font-bold" style={{ color: "var(--accent)" }}>×{count}</div>
+                  ) : (
+                    <div className="text-sm font-semibold" style={{ color: "var(--border)" }}>—</div>
+                  )}
+                  <div className="text-xs" style={{ color: earned ? "var(--text-muted)" : "var(--border)" }}>
+                    {label}
+                  </div>
                 </div>
               </TrophyPopover>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
 
       {/* BGG Username */}
