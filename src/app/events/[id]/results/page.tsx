@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { isEventOver } from "@/lib/eventUtils";
+import { computeEventTrophies, TROPHY_META, TrophyKey, PlayForTrophy } from "@/lib/trophyUtils";
 
 export default async function EventResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -13,11 +15,17 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
     select: {
       name: true,
       date: true,
+      endDate: true,
       games: {
         select: {
           name: true,
           plays: {
-            include: { players: true },
+            select: {
+              winner: true,
+              notes: true,
+              createdAt: true,
+              players: { select: { name: true } },
+            },
             orderBy: { createdAt: "asc" },
           },
         },
@@ -27,10 +35,11 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
 
   if (!event) notFound();
 
-  // Build per-player stats
+  const isPast = isEventOver(event);
+
+  // Build per-player stats and play log
   type PlayerStats = { played: number; won: number };
   const stats = new Map<string, PlayerStats>();
-
   const allPlays: { gameName: string; players: string[]; winner: string | null; notes: string | null }[] = [];
 
   for (const game of event.games) {
@@ -56,64 +65,35 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
     .map(([name, s]) => ({ name, ...s, winRate: s.played > 0 ? s.won / s.played : 0 }))
     .sort((a, b) => b.won - a.won || b.played - a.played);
 
-  // Compute trophies
-  type Trophy = { emoji: string; title: string; subtitle: string; winners: string[] };
-  const trophies: Trophy[] = [];
+  // Compute trophies — only finalised once the event is over
+  type AwardedTrophy = { key: TrophyKey; winners: string[] };
+  let awardedTrophies: AwardedTrophy[] = [];
 
-  if (players.length > 0) {
-    const maxWins = Math.max(...players.map((p) => p.won));
-    if (maxWins > 0) {
-      trophies.push({
-        emoji: "🏆",
-        title: "Champion",
-        subtitle: `${maxWins} win${maxWins > 1 ? "s" : ""}`,
-        winners: players.filter((p) => p.won === maxWins).map((p) => p.name),
-      });
-    }
+  if (isPast && allPlays.length > 0) {
+    const playsForTrophy: PlayForTrophy[] = event.games.flatMap((game) =>
+      game.plays.map((play) => ({
+        eventId: id,
+        winner: play.winner,
+        players: play.players,
+        createdAt: play.createdAt,
+        gameName: game.name,
+      }))
+    );
 
-    const maxPlayed = Math.max(...players.map((p) => p.played));
-    const addicts = players.filter((p) => p.played === maxPlayed);
-    trophies.push({
-      emoji: "🎲",
-      title: "Game Addict",
-      subtitle: `${maxPlayed} game${maxPlayed > 1 ? "s" : ""} played`,
-      winners: addicts.map((p) => p.name),
-    });
+    const trophyMap = computeEventTrophies(playsForTrophy);
 
-    const zeroWins = players.filter((p) => p.played > 0 && p.won === 0);
-    if (zeroWins.length > 0) {
-      const maxPlayedNoWin = Math.max(...zeroWins.map((p) => p.played));
-      trophies.push({
-        emoji: "😢",
-        title: "Unlucky",
-        subtitle: `${maxPlayedNoWin} game${maxPlayedNoWin > 1 ? "s" : ""}, 0 wins`,
-        winners: zeroWins.filter((p) => p.played === maxPlayedNoWin).map((p) => p.name),
-      });
-    }
-
-    const undefeated = players.filter((p) => p.played >= 2 && p.won === p.played);
-    if (undefeated.length > 0) {
-      trophies.push({
-        emoji: "🛡️",
-        title: "Undefeated",
-        subtitle: `Won every game`,
-        winners: undefeated.map((p) => p.name),
-      });
-    }
-
-    if (allPlays.length > 0) {
-      const gameCounts = new Map<string, number>();
-      for (const { gameName } of allPlays) gameCounts.set(gameName, (gameCounts.get(gameName) ?? 0) + 1);
-      const topGameCount = Math.max(...gameCounts.values());
-      if (topGameCount > 1) {
-        const topGames = [...gameCounts.entries()].filter(([, c]) => c === topGameCount).map(([n]) => n);
-        trophies.push({
-          emoji: "🔁",
-          title: "Fan Favourite",
-          subtitle: `Played ${topGameCount}×`,
-          winners: topGames,
-        });
+    // Invert: player→trophies  to  trophy→players, preserving TROPHY_META order
+    const trophyToWinners = new Map<TrophyKey, string[]>();
+    for (const [player, trophies] of trophyMap) {
+      for (const trophy of trophies) {
+        const list = trophyToWinners.get(trophy) ?? [];
+        list.push(player);
+        trophyToWinners.set(trophy, list);
       }
+    }
+    for (const key of Object.keys(TROPHY_META) as TrophyKey[]) {
+      const winners = trophyToWinners.get(key);
+      if (winners) awardedTrophies.push({ key, winners });
     }
   }
 
@@ -138,30 +118,47 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
         </div>
       ) : (
         <>
-          {/* Trophies */}
-          {trophies.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Trophies</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {trophies.map((t) => (
-                  <div
-                    key={t.title}
-                    className="rounded-xl p-4 text-center space-y-1"
-                    style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
-                  >
-                    <div className="text-3xl">{t.emoji}</div>
-                    <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{t.title}</p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t.subtitle}</p>
-                    <p className="text-sm font-medium" style={{ color: "var(--accent)" }}>
-                      {t.winners.join(" & ")}
-                    </p>
-                  </div>
-                ))}
+          {/* Trophies — only shown once the event has ended */}
+          <section className="space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Trophies</h2>
+            {!isPast ? (
+              <div
+                className="rounded-xl px-5 py-4 text-sm text-center"
+                style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)", color: "var(--text-muted)" }}
+              >
+                🏆 Trophies will be awarded when the event ends
               </div>
-            </section>
-          )}
+            ) : awardedTrophies.length === 0 ? (
+              <div
+                className="rounded-xl px-5 py-4 text-sm text-center"
+                style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)", color: "var(--text-muted)" }}
+              >
+                No trophies awarded
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {awardedTrophies.map(({ key, winners }) => {
+                  const { emoji, label, criteria } = TROPHY_META[key];
+                  return (
+                    <div
+                      key={key}
+                      className="rounded-xl p-4 text-center space-y-1"
+                      style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
+                    >
+                      <div className="text-3xl">{emoji}</div>
+                      <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{label}</p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{criteria}</p>
+                      <p className="text-sm font-medium" style={{ color: "var(--accent)" }}>
+                        {winners.join(" & ")}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
 
-          {/* Standings */}
+          {/* Standings table */}
           {players.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Standings</h2>
@@ -191,7 +188,7 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
             </section>
           )}
 
-          {/* Game by game */}
+          {/* Game log */}
           <section className="space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Game Log</h2>
             <div className="space-y-2">

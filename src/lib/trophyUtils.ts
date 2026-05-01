@@ -43,7 +43,7 @@ function getWinners(play: PlayForTrophy): string[] {
   return play.winner.split(" & ").filter((w) => w !== "The Game");
 }
 
-function computeEventTrophies(plays: PlayForTrophy[]): Map<string, TrophyKey[]> {
+export function computeEventTrophies(plays: PlayForTrophy[]): Map<string, TrophyKey[]> {
   const result = new Map<string, TrophyKey[]>();
   if (plays.length === 0) return result;
 
