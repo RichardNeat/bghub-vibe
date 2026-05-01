@@ -39,6 +39,129 @@ type Props = {
 
 type BggResult = { id: string; name: string; year: string | null };
 
+function LogPlayForm({
+  gameId, gameName, eventId, attendees, plays, isCreator, isAdmin, onClose,
+}: {
+  gameId: string; gameName: string; eventId: string;
+  attendees: { id: string; name: string | null }[];
+  plays: GamePlay[]; isCreator: boolean; isAdmin: boolean;
+  onClose: () => void;
+}) {
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const [winner, setWinner] = useState("");
+  const [notes, setNotes] = useState("");
+
+  function togglePlayer(name: string) {
+    const next = selectedPlayers.includes(name)
+      ? selectedPlayers.filter((p) => p !== name)
+      : [...selectedPlayers, name];
+    setSelectedPlayers(next);
+    if (!next.includes(winner)) setWinner("");
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const fd = new FormData();
+    selectedPlayers.forEach((p) => fd.append("players", p));
+    if (winner) fd.append("winner", winner);
+    if (notes.trim()) fd.append("notes", notes.trim());
+    await logGamePlay(gameId, eventId, fd);
+    onClose();
+  }
+
+  return (
+    <div className="mt-2 rounded-lg p-3 space-y-3" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}>
+      <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Log a play of {gameName}</p>
+      <form onSubmit={handleSubmit} className="space-y-2.5">
+        {attendees.length > 0 && (
+          <div>
+            <p className="text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Who played?</p>
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+              {attendees.map((a) => {
+                const name = a.name ?? "";
+                return (
+                  <label key={a.id} className="flex items-center gap-1.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={selectedPlayers.includes(name)}
+                      onChange={() => togglePlayer(name)}
+                      className="rounded"
+                    />
+                    <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {selectedPlayers.length > 0 && (
+          <div>
+            <p className="text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Winner <span className="font-normal">(optional)</span></p>
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+              {selectedPlayers.map((name) => (
+                <label key={name} className="flex items-center gap-1.5 cursor-pointer select-none">
+                  <input
+                    type="radio"
+                    name="winner"
+                    value={name}
+                    checked={winner === name}
+                    onChange={() => setWinner(name)}
+                  />
+                  <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{name}</span>
+                </label>
+              ))}
+              {winner && (
+                <button type="button" onClick={() => setWinner("")} className="text-xs hover:underline" style={{ color: "var(--text-muted)" }}>
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        <div>
+          <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Notes <span className="font-normal">(optional)</span></p>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            placeholder="How did it go?"
+            className="w-full rounded-lg px-2.5 py-1.5 text-sm focus:outline-none resize-none"
+            style={{ border: "1px solid var(--border)" }}
+          />
+        </div>
+        <div className="flex gap-2">
+          <button type="submit" className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90" style={{ backgroundColor: "var(--accent)" }}>
+            Save play
+          </button>
+          <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs font-medium hover:underline" style={{ color: "var(--text-muted)" }}>
+            Cancel
+          </button>
+        </div>
+      </form>
+
+      {plays.length > 0 && (
+        <div className="space-y-1.5 pt-1" style={{ borderTop: "1px solid var(--border-light)" }}>
+          <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Previous plays</p>
+          {plays.map((play) => (
+            <div key={play.id} className="flex items-start justify-between gap-2">
+              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                {play.players.length > 0 && <span>{play.players.join(", ")}</span>}
+                {play.winner && <span className="ml-1.5 font-semibold" style={{ color: "var(--success)" }}>🏆 {play.winner}</span>}
+                {play.notes && <div className="mt-0.5 italic" style={{ color: "var(--text-muted)" }}>{play.notes}</div>}
+              </div>
+              {(isCreator || isAdmin) && (
+                <form action={deleteGamePlay.bind(null, play.id, eventId)} className="shrink-0">
+                  <button type="submit" className="text-xs hover:underline" style={{ color: "var(--danger)" }}>Delete</button>
+                </form>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreator, isAttending, attendees, findGameTrigger }: Props) {
   const [filter, setFilter] = useState<"all" | "mine">("all");
   const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes" | "wants">("added");
@@ -477,96 +600,18 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
                       )}
                     </div>
                   {/* Log play form */}
-                {loggingPlayId === g.id && (
-                  <div
-                    className="mt-2 rounded-lg p-3 space-y-3"
-                    style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
-                  >
-                    <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Log a play of {g.name}</p>
-                    <form
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        const fd = new FormData(e.currentTarget);
-                        await logGamePlay(g.id, eventId, fd);
-                        setLoggingPlayId(null);
-                      }}
-                      className="space-y-2.5"
-                    >
-                      {attendees.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Who played?</p>
-                          <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-                            {attendees.map((a) => (
-                              <label key={a.id} className="flex items-center gap-1.5 cursor-pointer select-none">
-                                <input type="checkbox" name="players" value={a.name ?? ""} className="rounded" />
-                                <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{a.name}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Winner <span className="font-normal">(optional)</span></p>
-                        <input
-                          type="text"
-                          name="winner"
-                          placeholder="e.g. Alice, Everyone (coop)"
-                          autoComplete="off"
-                          className="w-full rounded-lg px-2.5 py-1.5 text-sm focus:outline-none"
-                          style={{ border: "1px solid var(--border)" }}
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Notes <span className="font-normal">(optional)</span></p>
-                        <textarea
-                          name="notes"
-                          rows={2}
-                          placeholder="How did it go?"
-                          className="w-full rounded-lg px-2.5 py-1.5 text-sm focus:outline-none resize-none"
-                          style={{ border: "1px solid var(--border)" }}
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="submit"
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90"
-                          style={{ backgroundColor: "var(--accent)" }}
-                        >
-                          Save play
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setLoggingPlayId(null)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium hover:underline"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
-
-                    {/* Existing plays list */}
-                    {g.plays.length > 0 && (
-                      <div className="space-y-1.5 pt-1" style={{ borderTop: "1px solid var(--border-light)" }}>
-                        <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Previous plays</p>
-                        {g.plays.map((play) => (
-                          <div key={play.id} className="flex items-start justify-between gap-2">
-                            <div className="text-xs space-y-0.5" style={{ color: "var(--text-secondary)" }}>
-                              {play.players.length > 0 && <span>{play.players.join(", ")}</span>}
-                              {play.winner && <span className="ml-1 font-semibold" style={{ color: "var(--success)" }}>🏆 {play.winner}</span>}
-                              {play.notes && <div className="italic" style={{ color: "var(--text-muted)" }}>{play.notes}</div>}
-                            </div>
-                            {(isCreator || isAdmin) && (
-                              <form action={deleteGamePlay.bind(null, play.id, eventId)} className="shrink-0">
-                                <button type="submit" className="text-xs hover:underline" style={{ color: "var(--danger)" }}>Delete</button>
-                              </form>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                  {loggingPlayId === g.id && (
+                    <LogPlayForm
+                      gameId={g.id}
+                      gameName={g.name}
+                      eventId={eventId}
+                      attendees={attendees}
+                      plays={g.plays}
+                      isCreator={isCreator}
+                      isAdmin={isAdmin}
+                      onClose={() => setLoggingPlayId(null)}
+                    />
+                  )}
                   </>
                 )}
               </li>

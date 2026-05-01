@@ -86,6 +86,15 @@ export default async function EventPage({
                     Past event
                   </span>
                 )}
+                {isPast && event.games.some((g) => g.plays.length > 0) && (
+                  <Link
+                    href={`/events/${id}/results`}
+                    className="text-xs font-semibold px-2.5 py-0.5 rounded-full transition-all hover:opacity-80"
+                    style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}
+                  >
+                    🏆 View results
+                  </Link>
+                )}
               </div>
               {event.description && (
                 <p style={{ color: "var(--text-secondary)" }}>{event.description}</p>

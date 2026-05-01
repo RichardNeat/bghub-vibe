@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "/Users/richneat/Dev/sandbox/claude-training/src/app/events/[id]"
+    ]
+  }
+}
