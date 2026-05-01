@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { isEventOver } from "@/lib/eventUtils";
 import { computeEventTrophies, TROPHY_META, TrophyKey, PlayForTrophy } from "@/lib/trophyUtils";
+import { ShareStandingsButton } from "./ShareStandingsButton";
 
 export default async function EventResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -105,9 +106,14 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
         ← Back to event
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Standings</h1>
-        <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>{event.name}</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Standings</h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>{event.name}</p>
+        </div>
+        {isPast && hasData && (
+          <ShareStandingsButton eventId={id} eventName={event.name} />
+        )}
       </div>
 
       {!hasData ? (
