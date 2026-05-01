@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { computeAllTimeTrophies, TROPHY_META, TrophyKey, TrophyCounts, emptyTrophyCounts } from "@/lib/trophyUtils";
 import { TrophyPopover } from "@/components/TrophyPopover";
+import { isEventOver } from "@/lib/eventUtils";
 
 export default async function AccountPage() {
   const session = await auth();
@@ -29,14 +30,14 @@ export default async function AccountPage() {
     }),
     prisma.club.findMany({ orderBy: { name: "asc" } }),
     (async () => {
-      const attendances = await prisma.attendance.findMany({
-        where: { userId },
-        select: { eventId: true },
+      const attendedEvents = await prisma.event.findMany({
+        where: { attendances: { some: { userId } } },
+        select: { id: true, date: true, endDate: true },
       });
-      if (attendances.length === 0) return new Map<string, TrophyCounts>();
-      const eventIds = attendances.map((a) => a.eventId);
+      const pastEventIds = attendedEvents.filter((e) => isEventOver(e)).map((e) => e.id);
+      if (pastEventIds.length === 0) return new Map<string, TrophyCounts>();
       const plays = await prisma.gamePlay.findMany({
-        where: { eventId: { in: eventIds } },
+        where: { eventId: { in: pastEventIds } },
         select: {
           eventId: true,
           winner: true,

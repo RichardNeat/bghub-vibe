@@ -57,9 +57,14 @@ export default async function EventPage({
         createdAt: true,
         players: { select: { name: true } },
         game: { select: { name: true } },
+        event: { select: { date: true, endDate: true } },
       },
     });
-    attendeeTrophyMap = computeAllTimeTrophies(trophyPlays.map((p) => ({ ...p, gameName: p.game.name })));
+    // Only count trophies from events that have fully ended
+    const pastPlays = trophyPlays
+      .filter((p) => isEventOver(p.event))
+      .map((p) => ({ ...p, gameName: p.game.name }));
+    attendeeTrophyMap = computeAllTimeTrophies(pastPlays);
   }
   const isCreator = event.creatorId === userId;
   const isAttending = event.attendances.some((a) => a.userId === userId);
