@@ -201,18 +201,16 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
                   className="rounded-xl px-4 py-3"
                   style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
                 >
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div>
-                      <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>🎲 {play.gameName}</p>
-                      {play.players.length > 0 && (
-                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                          {play.players.join(", ")}
-                        </p>
-                      )}
-                      {play.notes && <p className="text-xs mt-1 italic" style={{ color: "var(--text-muted)" }}>{play.notes}</p>}
-                    </div>
+                  <div className="space-y-1.5">
+                    <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>🎲 {play.gameName}</p>
+                    {play.players.length > 0 && (
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {play.players.join(", ")}
+                      </p>
+                    )}
+                    {play.notes && <p className="text-xs italic" style={{ color: "var(--text-muted)" }}>{play.notes}</p>}
                     {play.winner && (
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full shrink-0" style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}>
+                      <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}>
                         🏆 {play.winner}
                       </span>
                     )}
