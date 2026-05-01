@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createEvent } from "@/lib/actions";
+import { isEventOver } from "@/lib/eventUtils";
 import { DateTimeInput } from "@/components/DateTimeInput";
 import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 import Link from "next/link";
@@ -52,15 +53,20 @@ export default async function EventsPage() {
   const events = await prisma.event.findMany({
     where: { clubId: { in: clubIds } },
     orderBy: { date: "asc" },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      date: true,
+      endDate: true,
       creator: { select: { name: true } },
       club: { select: { name: true } },
       _count: { select: { attendances: true } },
     },
   });
 
-  const upcoming = events.filter((e) => e.date >= new Date());
-  const past = events.filter((e) => e.date < new Date());
+  const upcoming = events.filter((e) => !isEventOver(e));
+  const past = events.filter((e) => isEventOver(e));
 
   return (
     <div className="space-y-8">
@@ -131,10 +137,21 @@ export default async function EventsPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
-                Date &amp; time
+                Start date &amp; time
               </label>
               <DateTimeInput
                 name="date"
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
+                style={{ border: "1px solid var(--border)" }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
+                End date <span className="normal-case font-normal">(optional, for multi-day events)</span>
+              </label>
+              <input
+                type="date"
+                name="endDate"
                 className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
                 style={{ border: "1px solid var(--border)" }}
               />
@@ -213,6 +230,7 @@ type EventItem = {
   name: string;
   description: string | null;
   date: Date;
+  endDate: Date | null;
   creator: { name: string | null } | null;
   club: { name: string } | null;
   _count: { attendances: number };
@@ -266,6 +284,13 @@ function EventList({ events, muted = false }: { events: EventItem[]; muted?: boo
                 )}
                 <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                   by {event.creator?.name ?? "Deleted user"} · {event.date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                  {event.endDate && (() => {
+                    const startDay = new Date(event.date); startDay.setHours(0,0,0,0);
+                    const endDay = new Date(event.endDate!); endDay.setHours(0,0,0,0);
+                    return startDay.getTime() !== endDay.getTime()
+                      ? ` · ends ${event.endDate!.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                      : null;
+                  })()}
                 </span>
               </div>
             </div>

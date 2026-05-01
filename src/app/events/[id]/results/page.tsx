@@ -126,7 +126,7 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
       </Link>
 
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Results</h1>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Standings</h1>
         <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>{event.name}</p>
       </div>
 
@@ -134,7 +134,7 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
         <div className="text-center py-16 rounded-xl" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}>
           <div className="text-4xl mb-3">🎲</div>
           <p className="font-semibold" style={{ color: "var(--text-primary)" }}>No plays logged yet</p>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Log game plays from the event page to see results here.</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Log game plays from the event page to see standings here.</p>
         </div>
       ) : (
         <>

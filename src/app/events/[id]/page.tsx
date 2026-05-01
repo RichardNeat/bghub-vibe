@@ -7,6 +7,7 @@ import { GamesSection } from "./GamesSection";
 import { FindGameModal } from "./FindGameModal";
 import { AttendanceButton } from "./AttendanceButton";
 import { EventActions } from "./EventActions";
+import { isEventOver, formatDateRange } from "@/lib/eventUtils";
 import Link from "next/link";
 
 export default async function EventPage({
@@ -40,7 +41,7 @@ export default async function EventPage({
 
   if (!event) notFound();
 
-  const isPast = event.date < new Date();
+  const isPast = isEventOver(event);
   const isCreator = event.creatorId === userId;
   const isAttending = event.attendances.some((a) => a.userId === userId);
   const mapEnabled = !!process.env.GOOGLE_MAPS_KEY;
@@ -86,13 +87,21 @@ export default async function EventPage({
                     Past event
                   </span>
                 )}
-                {isPast && event.games.some((g) => g.plays.length > 0) && (
+                {!isPast && event.endDate && event.date <= new Date() && (
+                  <span
+                    className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}
+                  >
+                    Ongoing
+                  </span>
+                )}
+                {event.games.some((g) => g.plays.length > 0) && (
                   <Link
                     href={`/events/${id}/results`}
                     className="text-xs font-semibold px-2.5 py-0.5 rounded-full transition-all hover:opacity-80"
                     style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}
                   >
-                    🏆 View results
+                    📊 Standings
                   </Link>
                 )}
               </div>
@@ -121,12 +130,7 @@ export default async function EventPage({
             {[
               {
                 icon: "📅",
-                text: event.date.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                }),
+                text: formatDateRange(event.date, event.endDate),
               },
               {
                 icon: "🕐",
@@ -157,7 +161,12 @@ export default async function EventPage({
           {/* Share + Calendar */}
           <div className="mt-4">
             <EventActions
-              calendarUrl={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.name)}&dates=${event.date.toISOString().replace(/[-:]/g, "").split(".")[0]}Z/${new Date(event.date.getTime() + 3 * 60 * 60 * 1000).toISOString().replace(/[-:]/g, "").split(".")[0]}Z${event.location ? `&location=${encodeURIComponent(event.location)}` : ""}${event.description ? `&details=${encodeURIComponent(event.description)}` : ""}`}
+              calendarUrl={(() => {
+                const calEnd = event.endDate
+                  ? (() => { const d = new Date(event.endDate!); d.setHours(23, 59, 0, 0); return d; })()
+                  : new Date(event.date.getTime() + 3 * 60 * 60 * 1000);
+                return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.name)}&dates=${event.date.toISOString().replace(/[-:]/g, "").split(".")[0]}Z/${calEnd.toISOString().replace(/[-:]/g, "").split(".")[0]}Z${event.location ? `&location=${encodeURIComponent(event.location)}` : ""}${event.description ? `&details=${encodeURIComponent(event.description)}` : ""}`;
+              })()}
             />
           </div>
 

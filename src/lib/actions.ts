@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
 import { prisma } from "./prisma";
+import { isEventOver } from "./eventUtils";
 
 async function requireUser() {
   const session = await auth();
@@ -19,6 +20,7 @@ export async function createEvent(formData: FormData) {
   const user = await requireUser();
   const name = (formData.get("name") as string)?.trim();
   const date = formData.get("date") as string;
+  const endDateStr = (formData.get("endDate") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
   const location = (formData.get("location") as string)?.trim();
   const clubId = (formData.get("clubId") as string)?.trim();
@@ -28,10 +30,14 @@ export async function createEvent(formData: FormData) {
   const eventDate = new Date(date);
   if (eventDate <= new Date()) return;
 
+  const endDate = endDateStr ? new Date(endDateStr + "T12:00:00") : null;
+  if (endDate && endDate < eventDate) return;
+
   const event = await prisma.event.create({
     data: {
       name,
       date: eventDate,
+      endDate,
       description: description || null,
       location: location || null,
       clubId,
@@ -46,10 +52,11 @@ export async function createEvent(formData: FormData) {
 export async function updateEvent(eventId: string, formData: FormData) {
   const user = await requireUser();
   const event = await prisma.event.findUnique({ where: { id: eventId } });
-  if (!event || event.creatorId !== user.id || event.date < new Date()) return;
+  if (!event || event.creatorId !== user.id || isEventOver(event)) return;
 
   const name = (formData.get("name") as string)?.trim();
   const date = formData.get("date") as string;
+  const endDateStr = (formData.get("endDate") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
   const location = (formData.get("location") as string)?.trim();
 
@@ -57,9 +64,12 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const eventDate = new Date(date);
   if (eventDate <= new Date()) return;
 
+  const endDate = endDateStr ? new Date(endDateStr + "T12:00:00") : null;
+  if (endDate && endDate < eventDate) return;
+
   await prisma.event.update({
     where: { id: eventId },
-    data: { name, date: eventDate, description: description || null, location: location || null },
+    data: { name, date: eventDate, endDate, description: description || null, location: location || null },
   });
 
   revalidatePath(`/events/${eventId}`);
@@ -79,8 +89,8 @@ export async function deleteEvent(eventId: string) {
 export async function toggleAttendance(eventId: string) {
   const user = await requireUser();
 
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
-  if (!event || event.date < new Date()) return;
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true, endDate: true } });
+  if (!event || isEventOver(event)) return;
 
   const existing = await prisma.attendance.findUnique({
     where: { userId_eventId: { userId: user.id!, eventId } },
@@ -104,8 +114,8 @@ export async function addGame(eventId: string, formData: FormData): Promise<{ ga
   const name = (formData.get("name") as string)?.trim();
   if (!name) return null;
 
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
-  if (!event || event.date < new Date()) return null;
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true, endDate: true } });
+  if (!event || isEventOver(event)) return null;
 
   const game = await prisma.game.create({ data: { name, userId: user.id!, eventId } });
   revalidatePath(`/events/${eventId}`);
@@ -122,8 +132,8 @@ export async function removeAttendance(attendanceId: string, eventId: string) {
 export async function toggleGameVote(gameId: string, eventId: string) {
   const user = await requireUser();
 
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
-  if (!event || event.date < new Date()) return;
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true, endDate: true } });
+  if (!event || isEventOver(event)) return;
 
   const existing = await prisma.gameVote.findUnique({
     where: { userId_gameId: { userId: user.id!, gameId } },
@@ -145,8 +155,8 @@ export async function updateGame(gameId: string, eventId: string, formData: Form
   const name = (formData.get("name") as string)?.trim();
   if (!name) return;
 
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
-  if (!event || event.date < new Date()) return;
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true, endDate: true } });
+  if (!event || isEventOver(event)) return;
 
   const game = await prisma.game.findUnique({ where: { id: gameId } });
   if (!game || game.userId !== user.id) return;
@@ -226,8 +236,8 @@ export async function updateGamePlay(playId: string, eventId: string, formData: 
 export async function removeGame(gameId: string, eventId: string) {
   const user = await requireUser();
 
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
-  if (!event || event.date < new Date()) return;
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true, endDate: true } });
+  if (!event || isEventOver(event)) return;
 
   const game = await prisma.game.findUnique({ where: { id: gameId } });
   if (!game || (game.userId !== user.id && !isAdmin(user.email))) return;
@@ -300,8 +310,8 @@ export async function joinClubByName(name: string) {
 export async function toggleGameWant(gameId: string, eventId: string) {
   const user = await requireUser();
 
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
-  if (!event || event.date < new Date()) return;
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true, endDate: true } });
+  if (!event || isEventOver(event)) return;
 
   const existing = await prisma.gameWant.findUnique({
     where: { userId_gameId: { userId: user.id!, gameId } },

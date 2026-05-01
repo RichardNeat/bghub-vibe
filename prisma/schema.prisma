@@ -78,6 +78,7 @@ model Event {
   id          String       @id @default(cuid())
   name        String
   date        DateTime
+  endDate     DateTime?
   description String?
   location    String?
   clubId      String?

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { updateEvent } from "@/lib/actions";
+import { isEventOver } from "@/lib/eventUtils";
 import { DateTimeInput } from "@/components/DateTimeInput";
 import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 import Link from "next/link";
@@ -17,11 +18,13 @@ export default async function EditEventPage({
 
   const event = await prisma.event.findUnique({ where: { id } });
   if (!event) notFound();
-  if (event.creatorId !== userId || event.date < new Date()) redirect(`/events/${id}`);
+  if (event.creatorId !== userId || isEventOver(event)) redirect(`/events/${id}`);
 
   const pad = (n: number) => String(n).padStart(2, "0");
   const d = event.date;
   const defaultDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const ed = event.endDate;
+  const defaultEndDate = ed ? `${ed.getFullYear()}-${pad(ed.getMonth() + 1)}-${pad(ed.getDate())}` : undefined;
 
   const updateEventWithId = updateEvent.bind(null, id);
 
@@ -59,7 +62,7 @@ export default async function EditEventPage({
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
-                Date &amp; time
+                Start date &amp; time
               </label>
               <DateTimeInput
                 name="date"
@@ -68,6 +71,18 @@ export default async function EditEventPage({
                 style={{ border: "1px solid var(--border)" }}
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
+              End date <span className="normal-case font-normal">(optional, for multi-day events)</span>
+            </label>
+            <input
+              type="date"
+              name="endDate"
+              defaultValue={defaultEndDate}
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition"
+              style={{ border: "1px solid var(--border)" }}
+            />
           </div>
 
           <div>
