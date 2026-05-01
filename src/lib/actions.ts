@@ -81,6 +81,14 @@ export async function deleteEvent(eventId: string) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event || (event.creatorId !== user.id && !isAdmin(user.email))) return;
 
+  // Explicitly remove play records before deletion so trophy calculations
+  // are always consistent, regardless of SQLite cascade enforcement.
+  const playIds = (
+    await prisma.gamePlay.findMany({ where: { eventId }, select: { id: true } })
+  ).map((p) => p.id);
+  await prisma.gamePlayPlayer.deleteMany({ where: { gamePlayId: { in: playIds } } });
+  await prisma.gamePlay.deleteMany({ where: { eventId } });
+
   await prisma.event.delete({ where: { id: eventId } });
   revalidatePath("/events");
   redirect("/events");
