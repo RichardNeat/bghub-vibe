@@ -43,8 +43,11 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
         stats.set(name, s);
       }
       if (play.winner) {
-        const s = stats.get(play.winner);
-        if (s) s.won++;
+        for (const wName of play.winner.split(" & ")) {
+          if (wName === "The Game") continue;
+          const s = stats.get(wName);
+          if (s) s.won++;
+        }
       }
     }
   }

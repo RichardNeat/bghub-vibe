@@ -194,6 +194,35 @@ export async function deleteGamePlay(playId: string, eventId: string) {
   revalidatePath(`/events/${eventId}`);
 }
 
+export async function updateGamePlay(playId: string, eventId: string, formData: FormData) {
+  const user = await requireUser();
+
+  const [attendance, event] = await Promise.all([
+    prisma.attendance.findUnique({ where: { userId_eventId: { userId: user.id!, eventId } } }),
+    prisma.event.findUnique({ where: { id: eventId }, select: { creatorId: true } }),
+  ]);
+
+  if (!event) return;
+  const canEdit = !!attendance || event.creatorId === user.id || isAdmin(user.email);
+  if (!canEdit) return;
+
+  const winner = (formData.get("winner") as string)?.trim() || null;
+  const notes = (formData.get("notes") as string)?.trim() || null;
+  const players = (formData.getAll("players") as string[]).filter(Boolean);
+
+  await prisma.gamePlayPlayer.deleteMany({ where: { gamePlayId: playId } });
+  await prisma.gamePlay.update({
+    where: { id: playId },
+    data: {
+      winner,
+      notes,
+      players: { create: players.map((name) => ({ name }) ) },
+    },
+  });
+
+  revalidatePath(`/events/${eventId}`);
+}
+
 export async function removeGame(gameId: string, eventId: string) {
   const user = await requireUser();
 

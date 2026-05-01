@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useOptimistic, useRef, useState } from "react";
-import { addGame, deleteGamePlay, logGamePlay, removeGame, toggleGameVote, toggleGameWant, updateGame } from "@/lib/actions";
+import { addGame, deleteGamePlay, logGamePlay, removeGame, toggleGameVote, toggleGameWant, updateGame, updateGamePlay } from "@/lib/actions";
 
 type GamePlay = {
   id: string;
@@ -39,6 +39,110 @@ type Props = {
 
 type BggResult = { id: string; name: string; year: string | null };
 
+function EditPlayForm({
+  play, eventId, attendees, onClose,
+}: {
+  play: GamePlay; eventId: string;
+  attendees: { id: string; name: string | null }[];
+  onClose: () => void;
+}) {
+  const existingWinners = play.winner ? play.winner.split(" & ") : [];
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>(play.players);
+  const [winners, setWinners] = useState<string[]>(existingWinners);
+  const [notes, setNotes] = useState(play.notes ?? "");
+
+  function togglePlayer(name: string) {
+    const next = selectedPlayers.includes(name)
+      ? selectedPlayers.filter((p) => p !== name)
+      : [...selectedPlayers, name];
+    setSelectedPlayers(next);
+    if (!next.includes(name)) setWinners((w) => w.filter((wn) => wn !== name));
+  }
+
+  function toggleWinner(name: string) {
+    if (name === "The Game") {
+      setWinners((w) => (w.includes("The Game") ? [] : ["The Game"]));
+    } else {
+      setWinners((w) => {
+        const without = w.filter((wn) => wn !== "The Game");
+        return without.includes(name) ? without.filter((wn) => wn !== name) : [...without, name];
+      });
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const fd = new FormData();
+    selectedPlayers.forEach((p) => fd.append("players", p));
+    if (winners.length > 0) fd.append("winner", winners.join(" & "));
+    if (notes.trim()) fd.append("notes", notes.trim());
+    await updateGamePlay(play.id, eventId, fd);
+    onClose();
+  }
+
+  return (
+    <div className="mt-1 rounded-lg p-2.5 space-y-2" style={{ backgroundColor: "var(--bg-page)", border: "1px solid var(--border)" }}>
+      <form onSubmit={handleSubmit} className="space-y-2">
+        {attendees.length > 0 && (
+          <div>
+            <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Who played?</p>
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {attendees.map((a) => {
+                const name = a.name ?? "";
+                return (
+                  <label key={a.id} className="flex items-center gap-1.5 cursor-pointer select-none">
+                    <input type="checkbox" checked={selectedPlayers.includes(name)} onChange={() => togglePlayer(name)} className="rounded" />
+                    <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {selectedPlayers.length > 0 && (
+          <div>
+            <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Winner(s) <span className="font-normal">(optional)</span></p>
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {selectedPlayers.map((name) => (
+                <label key={name} className="flex items-center gap-1.5 cursor-pointer select-none">
+                  <input type="checkbox" checked={winners.includes(name)} onChange={() => toggleWinner(name)} className="rounded" />
+                  <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{name}</span>
+                </label>
+              ))}
+              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" checked={winners.includes("The Game")} onChange={() => toggleWinner("The Game")} className="rounded" />
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>🎮 The Game (co-op)</span>
+              </label>
+              {winners.length > 0 && (
+                <button type="button" onClick={() => setWinners([])} className="text-xs hover:underline" style={{ color: "var(--text-muted)" }}>Clear</button>
+              )}
+            </div>
+          </div>
+        )}
+        <div>
+          <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Notes <span className="font-normal">(optional)</span></p>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            placeholder="How did it go?"
+            className="w-full rounded-lg px-2.5 py-1.5 text-sm focus:outline-none resize-none"
+            style={{ border: "1px solid var(--border)" }}
+          />
+        </div>
+        <div className="flex gap-2">
+          <button type="submit" className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90" style={{ backgroundColor: "var(--accent)" }}>
+            Save changes
+          </button>
+          <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs font-medium hover:underline" style={{ color: "var(--text-muted)" }}>
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function LogPlayForm({
   gameId, gameName, eventId, attendees, plays, isCreator, isAdmin, onClose,
 }: {
@@ -48,22 +152,34 @@ function LogPlayForm({
   onClose: () => void;
 }) {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [winner, setWinner] = useState("");
+  const [winners, setWinners] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [editingPlayId, setEditingPlayId] = useState<string | null>(null);
 
   function togglePlayer(name: string) {
     const next = selectedPlayers.includes(name)
       ? selectedPlayers.filter((p) => p !== name)
       : [...selectedPlayers, name];
     setSelectedPlayers(next);
-    if (!next.includes(winner)) setWinner("");
+    if (!next.includes(name)) setWinners((w) => w.filter((wn) => wn !== name));
+  }
+
+  function toggleWinner(name: string) {
+    if (name === "The Game") {
+      setWinners((w) => (w.includes("The Game") ? [] : ["The Game"]));
+    } else {
+      setWinners((w) => {
+        const without = w.filter((wn) => wn !== "The Game");
+        return without.includes(name) ? without.filter((wn) => wn !== name) : [...without, name];
+      });
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const fd = new FormData();
     selectedPlayers.forEach((p) => fd.append("players", p));
-    if (winner) fd.append("winner", winner);
+    if (winners.length > 0) fd.append("winner", winners.join(" & "));
     if (notes.trim()) fd.append("notes", notes.trim());
     await logGamePlay(gameId, eventId, fd);
     onClose();
@@ -96,22 +212,30 @@ function LogPlayForm({
         )}
         {selectedPlayers.length > 0 && (
           <div>
-            <p className="text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Winner <span className="font-normal">(optional)</span></p>
+            <p className="text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Winner(s) <span className="font-normal">(optional)</span></p>
             <div className="flex flex-wrap gap-x-3 gap-y-1.5">
               {selectedPlayers.map((name) => (
                 <label key={name} className="flex items-center gap-1.5 cursor-pointer select-none">
                   <input
-                    type="radio"
-                    name="winner"
-                    value={name}
-                    checked={winner === name}
-                    onChange={() => setWinner(name)}
+                    type="checkbox"
+                    checked={winners.includes(name)}
+                    onChange={() => toggleWinner(name)}
+                    className="rounded"
                   />
                   <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{name}</span>
                 </label>
               ))}
-              {winner && (
-                <button type="button" onClick={() => setWinner("")} className="text-xs hover:underline" style={{ color: "var(--text-muted)" }}>
+              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={winners.includes("The Game")}
+                  onChange={() => toggleWinner("The Game")}
+                  className="rounded"
+                />
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>🎮 The Game (co-op)</span>
+              </label>
+              {winners.length > 0 && (
+                <button type="button" onClick={() => setWinners([])} className="text-xs hover:underline" style={{ color: "var(--text-muted)" }}>
                   Clear
                 </button>
               )}
@@ -143,16 +267,36 @@ function LogPlayForm({
         <div className="space-y-1.5 pt-1" style={{ borderTop: "1px solid var(--border-light)" }}>
           <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Previous plays</p>
           {plays.map((play) => (
-            <div key={play.id} className="flex items-start justify-between gap-2">
-              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                {play.players.length > 0 && <span>{play.players.join(", ")}</span>}
-                {play.winner && <span className="ml-1.5 font-semibold" style={{ color: "var(--success)" }}>🏆 {play.winner}</span>}
-                {play.notes && <div className="mt-0.5 italic" style={{ color: "var(--text-muted)" }}>{play.notes}</div>}
+            <div key={play.id}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                  {play.players.length > 0 && <span>{play.players.join(", ")}</span>}
+                  {play.winner && <span className="ml-1.5 font-semibold" style={{ color: "var(--success)" }}>🏆 {play.winner}</span>}
+                  {play.notes && <div className="mt-0.5 italic" style={{ color: "var(--text-muted)" }}>{play.notes}</div>}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setEditingPlayId(editingPlayId === play.id ? null : play.id)}
+                    className="text-xs hover:underline"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {editingPlayId === play.id ? "Cancel" : "Edit"}
+                  </button>
+                  {(isCreator || isAdmin) && (
+                    <form action={deleteGamePlay.bind(null, play.id, eventId)} className="shrink-0">
+                      <button type="submit" className="text-xs hover:underline" style={{ color: "var(--danger)" }}>Delete</button>
+                    </form>
+                  )}
+                </div>
               </div>
-              {(isCreator || isAdmin) && (
-                <form action={deleteGamePlay.bind(null, play.id, eventId)} className="shrink-0">
-                  <button type="submit" className="text-xs hover:underline" style={{ color: "var(--danger)" }}>Delete</button>
-                </form>
+              {editingPlayId === play.id && (
+                <EditPlayForm
+                  play={play}
+                  eventId={eventId}
+                  attendees={attendees}
+                  onClose={() => setEditingPlayId(null)}
+                />
               )}
             </div>
           ))}
