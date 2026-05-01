@@ -186,122 +186,162 @@ function LogPlayForm({
   }
 
   return (
-    <div className="mt-2 rounded-lg p-3 space-y-3" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}>
-      <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Log a play of {gameName}</p>
-      <form onSubmit={handleSubmit} className="space-y-2.5">
-        {attendees.length > 0 && (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        style={{ backgroundColor: "var(--bg-card)", maxHeight: "90vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal header */}
+        <div
+          className="px-5 py-4 flex items-center justify-between gap-3 shrink-0"
+          style={{ borderBottom: "1px solid var(--border-light)" }}
+        >
           <div>
-            <p className="text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Who played?</p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-              {attendees.map((a) => {
-                const name = a.name ?? "";
-                return (
-                  <label key={a.id} className="flex items-center gap-1.5 cursor-pointer select-none">
+            <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>Log a play</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>🎲 {gameName}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-xl leading-none hover:opacity-60 transition-opacity"
+            style={{ color: "var(--text-muted)" }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="px-5 py-4 space-y-4 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {attendees.length > 0 && (
+              <div>
+                <p className="text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Who played?</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+                  {attendees.map((a) => {
+                    const name = a.name ?? "";
+                    return (
+                      <label key={a.id} className="flex items-center gap-1.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={selectedPlayers.includes(name)}
+                          onChange={() => togglePlayer(name)}
+                          className="rounded"
+                        />
+                        <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {selectedPlayers.length > 0 && (
+              <div>
+                <p className="text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Winner(s) <span className="font-normal">(optional)</span></p>
+                <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+                  {selectedPlayers.map((name) => (
+                    <label key={name} className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={winners.includes(name)}
+                        onChange={() => toggleWinner(name)}
+                        className="rounded"
+                      />
+                      <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{name}</span>
+                    </label>
+                  ))}
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
                     <input
                       type="checkbox"
-                      checked={selectedPlayers.includes(name)}
-                      onChange={() => togglePlayer(name)}
+                      checked={winners.includes("The Game")}
+                      onChange={() => toggleWinner("The Game")}
                       className="rounded"
                     />
-                    <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{name}</span>
+                    <span className="text-sm" style={{ color: "var(--text-muted)" }}>🎮 The Game (co-op)</span>
                   </label>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        {selectedPlayers.length > 0 && (
-          <div>
-            <p className="text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Winner(s) <span className="font-normal">(optional)</span></p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-              {selectedPlayers.map((name) => (
-                <label key={name} className="flex items-center gap-1.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={winners.includes(name)}
-                    onChange={() => toggleWinner(name)}
-                    className="rounded"
-                  />
-                  <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{name}</span>
-                </label>
-              ))}
-              <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={winners.includes("The Game")}
-                  onChange={() => toggleWinner("The Game")}
-                  className="rounded"
-                />
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>🎮 The Game (co-op)</span>
-              </label>
-              {winners.length > 0 && (
-                <button type="button" onClick={() => setWinners([])} className="text-xs hover:underline" style={{ color: "var(--text-muted)" }}>
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-        <div>
-          <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Notes <span className="font-normal">(optional)</span></p>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-            placeholder="How did it go?"
-            className="w-full rounded-lg px-2.5 py-1.5 text-sm focus:outline-none resize-none"
-            style={{ border: "1px solid var(--border)" }}
-          />
-        </div>
-        <div className="flex gap-2">
-          <button type="submit" className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90" style={{ backgroundColor: "var(--accent)" }}>
-            Save play
-          </button>
-          <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs font-medium hover:underline" style={{ color: "var(--text-muted)" }}>
-            Cancel
-          </button>
-        </div>
-      </form>
-
-      {plays.length > 0 && (
-        <div className="space-y-1.5 pt-1" style={{ borderTop: "1px solid var(--border-light)" }}>
-          <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Previous plays</p>
-          {plays.map((play) => (
-            <div key={play.id}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                  {play.players.length > 0 && <span>{play.players.join(", ")}</span>}
-                  {play.winner && <span className="ml-1.5 font-semibold" style={{ color: "var(--success)" }}>🏆 {play.winner}</span>}
-                  {play.notes && <div className="mt-0.5 italic" style={{ color: "var(--text-muted)" }}>{play.notes}</div>}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setEditingPlayId(editingPlayId === play.id ? null : play.id)}
-                    className="text-xs hover:underline"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    {editingPlayId === play.id ? "Cancel" : "Edit"}
-                  </button>
-                  {(isCreator || isAdmin) && (
-                    <form action={deleteGamePlay.bind(null, play.id, eventId)} className="shrink-0">
-                      <button type="submit" className="text-xs hover:underline" style={{ color: "var(--danger)" }}>Delete</button>
-                    </form>
+                  {winners.length > 0 && (
+                    <button type="button" onClick={() => setWinners([])} className="text-xs hover:underline self-center" style={{ color: "var(--text-muted)" }}>
+                      Clear
+                    </button>
                   )}
                 </div>
               </div>
-              {editingPlayId === play.id && (
-                <EditPlayForm
-                  play={play}
-                  eventId={eventId}
-                  attendees={attendees}
-                  onClose={() => setEditingPlayId(null)}
-                />
-              )}
+            )}
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Notes <span className="font-normal">(optional)</span></p>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+                placeholder="How did it go?"
+                className="w-full rounded-lg px-2.5 py-1.5 text-sm focus:outline-none resize-none"
+                style={{ border: "1px solid var(--border)" }}
+              />
             </div>
-          ))}
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
+                style={{ backgroundColor: "var(--accent)" }}
+              >
+                Save play
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg text-sm font-medium hover:underline"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+
+          {plays.length > 0 && (
+            <div className="space-y-2 pt-1" style={{ borderTop: "1px solid var(--border-light)" }}>
+              <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Previous plays</p>
+              {plays.map((play) => (
+                <div key={play.id}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                      {play.players.length > 0 && <span>{play.players.join(", ")}</span>}
+                      {play.winner && <span className="ml-1.5 font-semibold" style={{ color: "var(--success)" }}>🏆 {play.winner}</span>}
+                      {play.notes && <div className="mt-0.5 text-xs italic" style={{ color: "var(--text-muted)" }}>{play.notes}</div>}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setEditingPlayId(editingPlayId === play.id ? null : play.id)}
+                        className="text-xs hover:underline"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        {editingPlayId === play.id ? "Cancel" : "Edit"}
+                      </button>
+                      {(isCreator || isAdmin) && (
+                        <form action={deleteGamePlay.bind(null, play.id, eventId)}>
+                          <button type="submit" className="text-xs hover:underline" style={{ color: "var(--danger)" }}>Delete</button>
+                        </form>
+                      )}
+                    </div>
+                  </div>
+                  {editingPlayId === play.id && (
+                    <EditPlayForm
+                      play={play}
+                      eventId={eventId}
+                      attendees={attendees}
+                      onClose={() => setEditingPlayId(null)}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -743,19 +783,6 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
                         </>
                       )}
                     </div>
-                  {/* Log play form */}
-                  {loggingPlayId === g.id && (
-                    <LogPlayForm
-                      gameId={g.id}
-                      gameName={g.name}
-                      eventId={eventId}
-                      attendees={attendees}
-                      plays={g.plays}
-                      isCreator={isCreator}
-                      isAdmin={isAdmin}
-                      onClose={() => setLoggingPlayId(null)}
-                    />
-                  )}
                   </>
                 )}
               </li>
@@ -764,6 +791,24 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
         )}
 
       </div>
+
+      {/* Log play modal */}
+      {loggingPlayId && (() => {
+        const g = optimisticGames.find((game) => game.id === loggingPlayId);
+        if (!g) return null;
+        return (
+          <LogPlayForm
+            gameId={g.id}
+            gameName={g.name}
+            eventId={eventId}
+            attendees={attendees}
+            plays={g.plays}
+            isCreator={isCreator}
+            isAdmin={isAdmin}
+            onClose={() => setLoggingPlayId(null)}
+          />
+        );
+      })()}
 
       {/* Want to play popup */}
       {popup && (
