@@ -76,7 +76,9 @@
       "WebFetch(domain:boardgamesclub.co.uk)",
       "WebFetch(domain:wallingford.games)",
       "Bash(node -e ' *)",
-      "Bash(npx tsx *)"
+      "Bash(npx tsx *)",
+      "Bash(claude --version)",
+      "Bash(claude remote-control *)"
     ]
   }
 }

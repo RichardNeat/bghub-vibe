@@ -1,8 +1,7 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { isEventOver } from "@/lib/eventUtils";
-import { computeEventTrophies, TROPHY_META, TrophyKey, PlayForTrophy } from "@/lib/trophyUtils";
+
+export const runtime = "edge";
 
 const BG = "#111827";
 const CARD = "#1f2937";
@@ -15,105 +14,30 @@ const GOLD = "#fbbf24";
 const SILVER = "#e5e7eb";
 const BRONZE = "#d97706";
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
+type Player = { name: string; won: number; played: number };
+type Trophy = { emoji: string; label: string; winners: string[] };
 
+export async function GET(req: NextRequest) {
   try {
-    const event = await prisma.event.findUnique({
-      where: { id },
-      select: {
-        name: true,
-        date: true,
-        endDate: true,
-        games: {
-          select: {
-            name: true,
-            plays: {
-              select: {
-                winner: true,
-                createdAt: true,
-                players: { select: { name: true } },
-              },
-              orderBy: { createdAt: "asc" },
-            },
-          },
-        },
-      },
-    });
+    const { searchParams } = req.nextUrl;
+    const eventName = searchParams.get("name") ?? "Event";
+    const dateStr = searchParams.get("date") ?? "";
+    const isPast = searchParams.get("isPast") === "1";
 
-    if (!event) return new Response("Not found", { status: 404 });
-
-    const isPast = isEventOver(event);
-
-    // Build standings
-    const stats = new Map<string, { played: number; won: number }>();
-    const allPlaysForTrophy: PlayForTrophy[] = [];
-
-    for (const game of event.games) {
-      for (const play of game.plays) {
-        allPlaysForTrophy.push({
-          eventId: id,
-          winner: play.winner,
-          players: play.players,
-          createdAt: play.createdAt,
-          gameName: game.name,
-        });
-        for (const { name } of play.players) {
-          const s = stats.get(name) ?? { played: 0, won: 0 };
-          s.played++;
-          stats.set(name, s);
-        }
-        if (play.winner) {
-          for (const wName of play.winner.split(" & ")) {
-            if (wName === "The Game") continue;
-            const s = stats.get(wName);
-            if (s) s.won++;
-          }
-        }
-      }
+    let players: Player[] = [];
+    let trophies: Trophy[] = [];
+    try {
+      const rawPlayers = searchParams.get("players");
+      if (rawPlayers) players = JSON.parse(rawPlayers).slice(0, 6);
+      const rawTrophies = searchParams.get("trophies");
+      if (rawTrophies) trophies = JSON.parse(rawTrophies).slice(0, 8);
+    } catch {
+      // malformed data — render with empty standings
     }
-
-    const players = [...stats.entries()]
-      .map(([name, s]) => ({ name, ...s, winRate: s.played > 0 ? s.won / s.played : 0 }))
-      .sort((a, b) => b.won - a.won || b.played - a.played)
-      .slice(0, 6);
-
-    // Awarded trophies
-    type AwardedTrophy = { key: TrophyKey; emoji: string; label: string; winners: string[] };
-    let awardedTrophies: AwardedTrophy[] = [];
-
-    if (isPast && allPlaysForTrophy.length > 0) {
-      const trophyMap = computeEventTrophies(allPlaysForTrophy);
-      const trophyToWinners = new Map<TrophyKey, string[]>();
-      for (const [player, trophies] of trophyMap) {
-        for (const trophy of trophies) {
-          const list = trophyToWinners.get(trophy) ?? [];
-          list.push(player);
-          trophyToWinners.set(trophy, list);
-        }
-      }
-      for (const key of Object.keys(TROPHY_META) as TrophyKey[]) {
-        const winners = trophyToWinners.get(key);
-        if (winners) {
-          const { emoji, label } = TROPHY_META[key];
-          awardedTrophies.push({ key, emoji, label, winners });
-        }
-      }
-    }
-
-    const dateStr = event.date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-
-    const medals = ["🥇", "🥈", "🥉"];
-    const medalColors = [GOLD, SILVER, BRONZE];
 
     const hasData = players.length > 0;
+    const medals = ["🥇", "🥈", "🥉"];
+    const medalColors = [GOLD, SILVER, BRONZE];
 
     return new ImageResponse(
       (
@@ -154,13 +78,13 @@ export async function GET(
                   BGHub
                 </span>
               </div>
-              <span style={{ fontSize: "20px", color: MUTED }}>{dateStr}</span>
+              {dateStr && <span style={{ fontSize: "20px", color: MUTED }}>{dateStr}</span>}
             </div>
 
             {/* Event name */}
             <div style={{ marginBottom: "6px" }}>
               <span style={{ fontSize: "44px", fontWeight: "bold", color: TEXT, lineHeight: 1.1 }}>
-                {event.name}
+                {eventName}
               </span>
             </div>
             <div style={{ marginBottom: "36px" }}>
@@ -234,14 +158,14 @@ export async function GET(
                         {p.played}
                       </span>
                       <span style={{ width: "88px", textAlign: "right", fontSize: "20px", color: MUTED }}>
-                        {p.played > 0 ? `${Math.round(p.winRate * 100)}%` : "—"}
+                        {p.played > 0 ? `${Math.round((p.won / p.played) * 100)}%` : "—"}
                       </span>
                     </div>
                   ))}
                 </div>
 
                 {/* Trophies */}
-                {awardedTrophies.length > 0 && (
+                {trophies.length > 0 && (
                   <div style={{ marginTop: "auto", paddingTop: "28px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
                       <span style={{ fontSize: "14px", color: MUTED, textTransform: "uppercase", letterSpacing: "1px" }}>
@@ -249,9 +173,9 @@ export async function GET(
                       </span>
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                      {awardedTrophies.slice(0, 8).map(({ key, emoji, label, winners }) => (
+                      {trophies.map(({ emoji, label, winners }, i) => (
                         <div
-                          key={key}
+                          key={i}
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -278,7 +202,7 @@ export async function GET(
             {/* Footer */}
             <div
               style={{
-                marginTop: hasData && awardedTrophies.length > 0 ? "24px" : "auto",
+                marginTop: hasData && trophies.length > 0 ? "24px" : "auto",
                 display: "flex",
                 justifyContent: "flex-end",
                 alignItems: "center",

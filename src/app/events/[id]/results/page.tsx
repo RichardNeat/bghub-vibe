@@ -100,6 +100,17 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
 
   const hasData = allPlays.length > 0;
 
+  const shareDateStr = event.date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const shareTrophies = awardedTrophies.map(({ key, winners }) => ({
+    emoji: TROPHY_META[key].emoji,
+    label: TROPHY_META[key].label,
+    winners,
+  }));
+
   return (
     <div className="space-y-6">
       <Link href={`/events/${id}`} className="inline-flex items-center gap-1 text-sm transition-colors hover:underline" style={{ color: "var(--accent)" }}>
@@ -112,7 +123,13 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
           <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>{event.name}</p>
         </div>
         {isPast && hasData && (
-          <ShareStandingsButton eventId={id} eventName={event.name} />
+          <ShareStandingsButton
+            eventName={event.name}
+            dateStr={shareDateStr}
+            isPast={isPast}
+            players={players.slice(0, 6).map((p) => ({ name: p.name, won: p.won, played: p.played }))}
+            trophies={shareTrophies}
+          />
         )}
       </div>
 

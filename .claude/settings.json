@@ -1,10 +1,17 @@
 {
   "permissions": {
-    "additionalDirectories": [
-      "/Users/richneat/Dev/sandbox/claude-training/src/app/events/[id]"
-    ],
     "allow": [
-      "Bash(find /Users/richneat/Dev/sandbox/claude-training/public\" -name \"favicon*\" 2>/dev/null; find /Users/richneat/Dev/sandbox/claude-training -name \"favicon*\" -not -path \"*/node_modules/*\" 2>/dev/null)"
+      "Bash(find /Users/richneat/Dev/sandbox/claude-training/public\" -name \"favicon*\" 2>/dev/null; find /Users/richneat/Dev/sandbox/claude-training -name \"favicon*\" -not -path \"*/node_modules/*\" 2>/dev/null)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('next:', p.dependencies.next\\)\")",
+      "Bash(npx next *)",
+      "Bash(rm \"/Users/richneat/Dev/sandbox/claude-training/src/app/api/events/[id]/og/route.tsx\")",
+      "Bash(rmdir \"/Users/richneat/Dev/sandbox/claude-training/src/app/api/events/[id]/og\")",
+      "Bash(rmdir \"/Users/richneat/Dev/sandbox/claude-training/src/app/api/events/[id]\")"
+    ],
+    "additionalDirectories": [
+      "/Users/richneat/Dev/sandbox/claude-training/src/app/events/[id]",
+      "/Users/richneat/Dev/sandbox/claude-training/src/app/api/events/[id]",
+      "/Users/richneat/Dev/sandbox/claude-training/src/app/api/events/[id]/og"
     ]
   }
 }

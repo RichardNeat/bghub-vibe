@@ -2,13 +2,39 @@
 
 import { useState } from "react";
 
-export function ShareStandingsButton({ eventId, eventName }: { eventId: string; eventName: string }) {
+type Player = { name: string; won: number; played: number };
+type Trophy = { emoji: string; label: string; winners: string[] };
+
+export function ShareStandingsButton({
+  eventName,
+  dateStr,
+  isPast,
+  players,
+  trophies,
+}: {
+  eventName: string;
+  dateStr: string;
+  isPast: boolean;
+  players: Player[];
+  trophies: Trophy[];
+}) {
   const [loading, setLoading] = useState(false);
+
+  function buildImageUrl() {
+    const params = new URLSearchParams({
+      name: eventName,
+      date: dateStr,
+      isPast: isPast ? "1" : "0",
+      players: JSON.stringify(players.slice(0, 6)),
+      trophies: JSON.stringify(trophies.slice(0, 8)),
+    });
+    return `/api/og?${params}`;
+  }
 
   async function handleShare() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/events/${eventId}/og`);
+      const res = await fetch(buildImageUrl());
       if (!res.ok) throw new Error("Failed to generate image");
       const blob = await res.blob();
 
