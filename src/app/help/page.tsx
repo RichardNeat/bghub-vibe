@@ -118,6 +118,7 @@ const sections: Section[] = [
         emoji: "📊",
         title: "View live standings",
         body: "Once any play is logged, a Standings link appears at the top of the event page. It shows a live leaderboard, trophies (Champion, Game Addict, Undefeated, and more), and a full game log. Available during and after the event.",
+        tip: "Trophies earned across all events accumulate on your Account page. You can also see each attendee's all-time trophy tally inline on the event's attendees list.",
       },
     ],
   },

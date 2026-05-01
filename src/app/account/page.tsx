@@ -5,14 +5,17 @@ import { updateBggUsername, joinClub, leaveClub } from "@/lib/actions";
 import { DeleteAccountButton } from "./DeleteAccountButton";
 import Link from "next/link";
 import Image from "next/image";
+import { computeAllTimeTrophies, TROPHY_META, TrophyKey, TrophyCounts, emptyTrophyCounts } from "@/lib/trophyUtils";
+import { TrophyPopover } from "@/components/TrophyPopover";
 
 export default async function AccountPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
+  const userId = session.user.id;
 
-  const [user, allClubs] = await Promise.all([
+  const [user, allClubs, trophyMap] = await Promise.all([
     prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       include: {
         clubs: { include: { club: true } },
         _count: {
@@ -25,9 +28,33 @@ export default async function AccountPage() {
       },
     }),
     prisma.club.findMany({ orderBy: { name: "asc" } }),
+    (async () => {
+      const attendances = await prisma.attendance.findMany({
+        where: { userId },
+        select: { eventId: true },
+      });
+      if (attendances.length === 0) return new Map<string, TrophyCounts>();
+      const eventIds = attendances.map((a) => a.eventId);
+      const plays = await prisma.gamePlay.findMany({
+        where: { eventId: { in: eventIds } },
+        select: {
+          eventId: true,
+          winner: true,
+          createdAt: true,
+          players: { select: { name: true } },
+          game: { select: { name: true } },
+        },
+      });
+      return computeAllTimeTrophies(plays.map((p) => ({ ...p, gameName: p.game.name })));
+    })(),
   ]);
 
   if (!user) redirect("/");
+
+  const myTrophies = trophyMap.get(user.name ?? "") ?? emptyTrophyCounts();
+  const earnedTrophies = (Object.entries(TROPHY_META) as [TrophyKey, (typeof TROPHY_META)[TrophyKey]][]).filter(
+    ([key]) => myTrophies[key] > 0
+  );
 
   const joinedClubIds = new Set(user.clubs.map((uc) => uc.clubId));
   const availableClubs = allClubs.filter((c) => !joinedClubIds.has(c.id));
@@ -91,6 +118,36 @@ export default async function AccountPage() {
             </p>
           </div>
         ))}
+      </div>
+
+      {/* Trophies */}
+      <div
+        className="rounded-xl shadow-sm p-6 space-y-4"
+        style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}
+      >
+        <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>Trophies</h2>
+        {earnedTrophies.length === 0 ? (
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            No trophies yet — play some games and win some awards!
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {earnedTrophies.map(([key, { emoji, label }]) => (
+              <TrophyPopover key={key} trophyKey={key} count={myTrophies[key]} className="block w-full text-left rounded-xl hover:opacity-80 transition-opacity">
+                <div
+                  className="rounded-xl p-4 text-center space-y-1"
+                  style={{ backgroundColor: "var(--bg-page)", border: "1px solid var(--border-light)" }}
+                >
+                  <div className="text-2xl">{emoji}</div>
+                  <div className="text-xl font-bold" style={{ color: "var(--accent)" }}>
+                    ×{myTrophies[key]}
+                  </div>
+                  <div className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</div>
+                </div>
+              </TrophyPopover>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* BGG Username */}
