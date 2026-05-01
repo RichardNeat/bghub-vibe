@@ -141,6 +141,36 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
         </div>
       ) : (
         <>
+          {/* Leaderboard table */}
+          {players.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Leaderboard</h2>
+              <div className="rounded-xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--border-light)" }}>
+                      {["Player", "Played", "Won", "Win %"].map((h) => (
+                        <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {players.map((p, i) => (
+                      <tr key={p.name} style={{ borderBottom: i < players.length - 1 ? "1px solid var(--border-light)" : undefined }}>
+                        <td className="px-4 py-2.5 font-medium" style={{ color: "var(--text-primary)" }}>{p.name}</td>
+                        <td className="px-4 py-2.5" style={{ color: "var(--text-secondary)" }}>{p.played}</td>
+                        <td className="px-4 py-2.5 font-semibold" style={{ color: p.won > 0 ? "var(--success)" : "var(--text-muted)" }}>{p.won}</td>
+                        <td className="px-4 py-2.5" style={{ color: "var(--text-secondary)" }}>
+                          {p.played > 0 ? `${Math.round(p.winRate * 100)}%` : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
           {/* Trophies — only shown once the event has ended */}
           <section className="space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Trophies</h2>
@@ -180,36 +210,6 @@ export default async function EventResultsPage({ params }: { params: Promise<{ i
               </div>
             )}
           </section>
-
-          {/* Standings table */}
-          {players.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Standings</h2>
-              <div className="rounded-xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)" }}>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid var(--border-light)" }}>
-                      {["Player", "Played", "Won", "Win %"].map((h) => (
-                        <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {players.map((p, i) => (
-                      <tr key={p.name} style={{ borderBottom: i < players.length - 1 ? "1px solid var(--border-light)" : undefined }}>
-                        <td className="px-4 py-2.5 font-medium" style={{ color: "var(--text-primary)" }}>{p.name}</td>
-                        <td className="px-4 py-2.5" style={{ color: "var(--text-secondary)" }}>{p.played}</td>
-                        <td className="px-4 py-2.5 font-semibold" style={{ color: p.won > 0 ? "var(--success)" : "var(--text-muted)" }}>{p.won}</td>
-                        <td className="px-4 py-2.5" style={{ color: "var(--text-secondary)" }}>
-                          {p.played > 0 ? `${Math.round(p.winRate * 100)}%` : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
 
           {/* Game log */}
           <section className="space-y-3">
