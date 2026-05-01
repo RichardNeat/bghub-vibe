@@ -733,35 +733,23 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
                         <span className="text-sm font-medium break-words" style={{ color: "var(--text-primary)" }}>
                           🎲 {g.name}
                         </span>
-                        {(isCreator || isAdmin || isAttending) && (
-                          g.plays.length > 0 ? (
-                            <button
-                              type="button"
-                              onClick={() => setLoggingPlayId(g.id)}
-                              className="text-xs font-semibold px-1.5 py-0.5 rounded-full hover:opacity-75 transition-opacity"
-                              style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}
-                              title="Log another play"
-                            >
-                              ✓ {g.plays.length}× +
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setLoggingPlayId(g.id)}
-                              className="text-xs font-semibold px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity"
-                              style={{ backgroundColor: "var(--accent-light)", color: "var(--accent)" }}
-                            >
-                              + log play
-                            </button>
-                          )
-                        )}
-                        {!(isCreator || isAdmin || isAttending) && g.plays.length > 0 && (
+                        {g.plays.length > 0 && (
                           <span
                             className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
                             style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}
                           >
                             ✓ {g.plays.length}×
                           </span>
+                        )}
+                        {(isCreator || isAdmin || isAttending) && (
+                          <button
+                            type="button"
+                            onClick={() => setLoggingPlayId(g.id)}
+                            className="text-xs font-semibold hover:underline"
+                            style={{ color: "var(--accent)" }}
+                          >
+                            + log a play
+                          </button>
                         )}
                       </div>
                       <span className="text-xs" style={{ color: "var(--text-muted)" }}>
