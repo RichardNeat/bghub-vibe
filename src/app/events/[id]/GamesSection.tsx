@@ -348,7 +348,8 @@ function LogPlayForm({
 
 export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreator, isAttending, attendees, findGameTrigger }: Props) {
   const [filter, setFilter] = useState<"all" | "mine">("all");
-  const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes" | "wants">("added");
+  const [playsFilter, setPlaysFilter] = useState<"all" | "played" | "unplayed">("all");
+  const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes" | "wants" | "plays">("added");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loggingPlayId, setLoggingPlayId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -448,11 +449,17 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
 
   const displayed = [...optimisticGames]
     .filter((g) => filter === "all" || g.userId === userId)
+    .filter((g) => {
+      if (playsFilter === "played") return g.plays.length > 0;
+      if (playsFilter === "unplayed") return g.plays.length === 0;
+      return true;
+    })
     .sort((a, b) => {
       if (sortBy === "game") return a.name.localeCompare(b.name);
       if (sortBy === "user") return (a.user.name ?? "").localeCompare(b.user.name ?? "");
       if (sortBy === "votes") return b.voteCount - a.voteCount;
       if (sortBy === "wants") return b.wantCount - a.wantCount;
+      if (sortBy === "plays") return b.plays.length - a.plays.length;
       return 0;
     });
 
@@ -506,6 +513,17 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
             </button>
 
             <select
+              value={playsFilter}
+              onChange={(e) => setPlaysFilter(e.target.value as typeof playsFilter)}
+              className="text-xs rounded-md px-2 py-1 focus:outline-none"
+              style={{ border: "1px solid var(--border)" }}
+            >
+              <option value="all">All games</option>
+              <option value="played">Played</option>
+              <option value="unplayed">Not played</option>
+            </select>
+
+            <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
               className="text-xs rounded-md px-2 py-1 focus:outline-none"
@@ -514,6 +532,7 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
               <option value="added">Order added</option>
               <option value="votes">Most voted</option>
               <option value="wants">Most wanted</option>
+              <option value="plays">Most played</option>
               <option value="game">Sort A–Z</option>
               <option value="user">Sort by person</option>
             </select>
@@ -597,7 +616,11 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
 
         {displayed.length === 0 ? (
           <p className="text-sm text-center py-2" style={{ color: "var(--text-muted)" }}>
-            {filter === "mine"
+            {playsFilter === "played"
+              ? "No games have been played yet."
+              : playsFilter === "unplayed"
+              ? "Every game has been played!"
+              : filter === "mine"
               ? "You haven't added any games yet."
               : isPast
               ? "No games were listed for this event."
