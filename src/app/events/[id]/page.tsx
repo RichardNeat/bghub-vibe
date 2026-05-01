@@ -266,45 +266,40 @@ export default async function EventPage({
                 {isPast ? "Nobody attended this event." : "No one yet — be the first!"}
               </p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 {event.attendances.map((a) => {
                   const trophies = attendeeTrophyMap.get(a.user.name ?? "") ?? emptyTrophyCounts();
                   const earnedTrophies = (Object.entries(TROPHY_META) as [TrophyKey, (typeof TROPHY_META)[TrophyKey]][]).filter(
                     ([key]) => trophies[key] > 0
                   );
                   return (
-                    <li key={a.id} className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0 space-y-1">
+                    <li key={a.id} className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0">
                         {a.user.bggUsername ? (
                           <a
                             href={`https://boardgamegeek.com/collection/user/${a.user.bggUsername}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm font-medium hover:underline block"
+                            className="text-sm font-medium hover:underline truncate block"
                             style={{ color: "var(--accent)" }}
                           >
                             {a.user.name}
                           </a>
                         ) : (
-                          <span className="text-sm font-medium block" style={{ color: "var(--text-primary)" }}>
+                          <span className="text-sm font-medium truncate block" style={{ color: "var(--text-primary)" }}>
                             {a.user.name}
                           </span>
                         )}
-                        {earnedTrophies.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {earnedTrophies.map(([key, { emoji }]) => (
-                              <TrophyPopover key={key} trophyKey={key} count={trophies[key]} className="inline-flex items-center">
-                                <span
-                                  className="text-xs px-1.5 py-0.5 rounded hover:opacity-80 transition-opacity cursor-pointer"
-                                  style={{ backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}
-                                >
-                                  {emoji} ×{trophies[key]}
-                                </span>
-                              </TrophyPopover>
-                            ))}
-                          </div>
-                        )}
                       </div>
+                      {earnedTrophies.length > 0 && (
+                        <div className="flex items-center shrink-0">
+                          {earnedTrophies.map(([key, { emoji }]) => (
+                            <TrophyPopover key={key} trophyKey={key} count={trophies[key]} className="text-sm leading-none hover:scale-125 transition-transform">
+                              {emoji}
+                            </TrophyPopover>
+                          ))}
+                        </div>
+                      )}
                       {a.userId === userId && (
                         <span
                           className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
