@@ -155,16 +155,42 @@ export async function updateGame(gameId: string, eventId: string, formData: Form
   revalidatePath(`/events/${eventId}`);
 }
 
-export async function toggleGamePlayed(gameId: string, eventId: string) {
+export async function logGamePlay(gameId: string, eventId: string, formData: FormData) {
+  const user = await requireUser();
+
+  const [attendance, event] = await Promise.all([
+    prisma.attendance.findUnique({ where: { userId_eventId: { userId: user.id!, eventId } } }),
+    prisma.event.findUnique({ where: { id: eventId }, select: { creatorId: true } }),
+  ]);
+
+  if (!event) return;
+  const canLog = !!attendance || event.creatorId === user.id || isAdmin(user.email);
+  if (!canLog) return;
+
+  const winner = (formData.get("winner") as string)?.trim() || null;
+  const notes = (formData.get("notes") as string)?.trim() || null;
+  const players = (formData.getAll("players") as string[]).filter(Boolean);
+
+  await prisma.gamePlay.create({
+    data: {
+      gameId,
+      eventId,
+      winner,
+      notes,
+      players: { create: players.map((name) => ({ name })) },
+    },
+  });
+
+  revalidatePath(`/events/${eventId}`);
+}
+
+export async function deleteGamePlay(playId: string, eventId: string) {
   const user = await requireUser();
 
   const event = await prisma.event.findUnique({ where: { id: eventId }, select: { creatorId: true } });
   if (!event || (event.creatorId !== user.id && !isAdmin(user.email))) return;
 
-  const game = await prisma.game.findUnique({ where: { id: gameId }, select: { played: true } });
-  if (!game) return;
-
-  await prisma.game.update({ where: { id: gameId }, data: { played: !game.played } });
+  await prisma.gamePlay.delete({ where: { id: playId } });
   revalidatePath(`/events/${eventId}`);
 }
 

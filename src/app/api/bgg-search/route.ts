@@ -13,10 +13,16 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim();
   if (!q || q.length < 2) return NextResponse.json([]);
 
+  const token = process.env.BGG_TOKEN;
+  if (!token) return NextResponse.json([]);
+
   try {
     const res = await fetch(
       `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(q)}&type=boardgame`,
-      { next: { revalidate: 60 } }
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        next: { revalidate: 60 },
+      }
     );
     const xml = await res.text();
 

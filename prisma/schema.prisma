@@ -87,6 +87,7 @@ model Event {
   club        Club?        @relation(fields: [clubId], references: [id], onDelete: SetNull)
   attendances Attendance[]
   games       Game[]
+  gamePlays   GamePlay[]
 }
 
 model Attendance {
@@ -100,15 +101,34 @@ model Attendance {
 }
 
 model Game {
-  id      String     @id @default(cuid())
+  id      String       @id @default(cuid())
   name    String
   userId  String
   eventId String
-  played  Boolean    @default(false)
-  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event   Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event   Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
   votes   GameVote[]
   wants   GameWant[]
+  plays   GamePlay[]
+}
+
+model GamePlay {
+  id        String           @id @default(cuid())
+  gameId    String
+  eventId   String
+  winner    String?
+  notes     String?
+  createdAt DateTime         @default(now())
+  game      Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  players   GamePlayPlayer[]
+}
+
+model GamePlayPlayer {
+  id         String   @id @default(cuid())
+  gamePlayId String
+  name       String
+  play       GamePlay @relation(fields: [gamePlayId], references: [id], onDelete: Cascade)
 }
 
 model GameVote {

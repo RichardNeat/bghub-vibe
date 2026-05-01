@@ -31,6 +31,7 @@ export default async function EventPage({
           user: { select: { id: true, name: true } },
           votes: { select: { userId: true, user: { select: { name: true } } } },
           wants: { select: { userId: true, user: { select: { name: true } } } },
+          plays: { include: { players: true }, orderBy: { createdAt: "asc" } },
         },
         orderBy: { id: "asc" },
       },
@@ -276,19 +277,30 @@ export default async function EventPage({
         <GamesSection
           eventId={id}
           games={event.games.map((g) => ({
-            ...g,
+            id: g.id,
+            name: g.name,
+            userId: g.userId,
+            user: g.user,
             voteCount: g.votes.length,
             hasVoted: g.votes.some((v) => v.userId === userId),
             voters: g.votes.map((v) => v.user.name ?? "Unknown"),
             wantCount: g.wants.length,
             hasWanted: g.wants.some((w) => w.userId === userId),
             wanters: g.wants.map((w) => w.user.name ?? "Unknown"),
+            plays: g.plays.map((p) => ({
+              id: p.id,
+              winner: p.winner,
+              notes: p.notes,
+              createdAt: p.createdAt,
+              players: p.players.map((pl) => pl.name),
+            })),
           }))}
           userId={userId}
           isPast={isPast}
           isAdmin={userIsAdmin}
           isCreator={isCreator}
           isAttending={isAttending}
+          attendees={event.attendances.map((a) => ({ id: a.userId, name: a.user.name }))}
           findGameTrigger={
             !isPast && event.attendances.length > 0 && event.games.length > 0 ? (
               <FindGameModal
