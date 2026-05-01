@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { addGame, removeGame, toggleGameVote, toggleGameWant, updateGame } from "@/lib/actions";
 
 type Game = {
@@ -10,8 +10,10 @@ type Game = {
   user: { id: string; name: string | null };
   voteCount: number;
   hasVoted: boolean;
+  voters: string[];
   wantCount: number;
   hasWanted: boolean;
+  wanters: string[];
 };
 
 type Props = {
@@ -30,7 +32,20 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
   const [editingId, setEditingId] = useState<string | null>(null);
   const [askOnAdd, setAskOnAdd] = useState(true);
   const [popup, setPopup] = useState<{ gameId: string; gameName: string } | null>(null);
+  const [namesPanel, setNamesPanel] = useState<string | null>(null); // `${gameId}-votes` or `${gameId}-wants`
   const addFormRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!namesPanel) return;
+    function close() { setNamesPanel(null); }
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [namesPanel]);
+
+  function toggleNames(e: React.MouseEvent, key: string) {
+    e.stopPropagation();
+    setNamesPanel((prev) => (prev === key ? null : key));
+  }
 
   const addGameWithId = addGame.bind(null, eventId);
 
@@ -215,37 +230,84 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isAttend
                 ) : (
                   <>
                     {!isPast && isAttending && (
-                      <div className="flex flex-col gap-1 shrink-0" style={{ width: "2.5rem" }}>
-                        <form action={toggleGameVote.bind(null, g.id, eventId)}>
-                          <button
-                            type="submit"
-                            title="I might be interested"
-                            className="flex items-center justify-center gap-1 text-xs font-semibold rounded-full transition-all hover:opacity-80 w-full"
-                            style={{
-                              height: "1.75rem",
-                              ...(g.hasVoted
+                      <div className="flex flex-col gap-1 shrink-0 relative">
+                        {/* Vote button: icon = action, count = show names */}
+                        <div className="flex rounded-full overflow-hidden text-xs font-semibold" style={{ height: "1.75rem" }}>
+                          <form action={toggleGameVote.bind(null, g.id, eventId)}>
+                            <button
+                              type="submit"
+                              title="I might be interested"
+                              className="flex items-center justify-center px-2 h-full transition-all hover:opacity-80"
+                              style={g.hasVoted
                                 ? { backgroundColor: "var(--accent)", color: "#fff" }
-                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" })
-                            }}
-                          >
-                            ▲{g.voteCount > 0 ? ` ${g.voteCount}` : ""}
-                          </button>
-                        </form>
-                        <form action={toggleGameWant.bind(null, g.id, eventId)}>
-                          <button
-                            type="submit"
-                            title="I want to play this"
-                            className="flex items-center justify-center text-xs font-semibold rounded-full transition-all hover:opacity-80 w-full"
-                            style={{
-                              height: "1.75rem",
-                              ...(g.hasWanted
+                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}
+                            >
+                              ▲
+                            </button>
+                          </form>
+                          {g.voteCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={(e) => toggleNames(e, `${g.id}-votes`)}
+                              className="flex items-center justify-center px-2 h-full transition-all hover:opacity-80"
+                              style={g.hasVoted
+                                ? { backgroundColor: "var(--accent-light)", color: "var(--accent)" }
+                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)", borderLeft: "1px solid var(--border)" }}
+                            >
+                              {g.voteCount}
+                            </button>
+                          )}
+                        </div>
+                        {/* Want button: icon = action, count = show names */}
+                        <div className="flex rounded-full overflow-hidden text-xs font-semibold" style={{ height: "1.75rem" }}>
+                          <form action={toggleGameWant.bind(null, g.id, eventId)}>
+                            <button
+                              type="submit"
+                              title="I want to play this"
+                              className="flex items-center justify-center px-2 h-full transition-all hover:opacity-80"
+                              style={g.hasWanted
                                 ? { backgroundColor: "#ca8a04", color: "#fff" }
-                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" })
-                            }}
+                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)" }}
+                            >
+                              ★
+                            </button>
+                          </form>
+                          {g.wantCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={(e) => toggleNames(e, `${g.id}-wants`)}
+                              className="flex items-center justify-center px-2 h-full transition-all hover:opacity-80"
+                              style={g.hasWanted
+                                ? { backgroundColor: "color-mix(in srgb, #ca8a04 15%, transparent)", color: "#ca8a04" }
+                                : { backgroundColor: "var(--border-light)", color: "var(--text-muted)", borderLeft: "1px solid var(--border)" }}
+                            >
+                              {g.wantCount}
+                            </button>
+                          )}
+                        </div>
+                        {/* Floating names popup */}
+                        {(namesPanel === `${g.id}-votes` || namesPanel === `${g.id}-wants`) && (
+                          <div
+                            className="absolute left-full top-0 ml-2 z-50 rounded-lg shadow-lg p-3 min-w-[140px] max-w-[220px]"
+                            style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            ★{g.wantCount > 0 ? ` ${g.wantCount}` : ""}
-                          </button>
-                        </form>
+                            <p className="text-xs font-semibold mb-1.5" style={{ color: "var(--text-muted)" }}>
+                              {namesPanel === `${g.id}-votes` ? "▲ Interested" : "★ Wants to play"}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {(namesPanel === `${g.id}-votes` ? g.voters : g.wanters).map((name) => (
+                                <span
+                                  key={name}
+                                  className="text-xs px-2 py-0.5 rounded-full"
+                                  style={{ backgroundColor: "var(--border-light)", color: "var(--text-secondary)" }}
+                                >
+                                  {name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     {isPast && g.voteCount > 0 && (
