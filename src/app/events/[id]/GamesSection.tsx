@@ -351,6 +351,7 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
   const [sortBy, setSortBy] = useState<"added" | "game" | "user" | "votes" | "wants">("added");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loggingPlayId, setLoggingPlayId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [askOnAdd, setAskOnAdd] = useState(true);
   const [popup, setPopup] = useState<{ gameId: string; gameName: string } | null>(null);
   const [namesPanel, setNamesPanel] = useState<string | null>(null);
@@ -388,11 +389,11 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
   );
 
   useEffect(() => {
-    if (!namesPanel) return;
-    function close() { setNamesPanel(null); }
+    if (!namesPanel && !openMenuId) return;
+    function close() { setNamesPanel(null); setOpenMenuId(null); }
     document.addEventListener("click", close);
     return () => document.removeEventListener("click", close);
-  }, [namesPanel]);
+  }, [namesPanel, openMenuId]);
 
   function toggleNames(e: React.MouseEvent, key: string) {
     e.stopPropagation();
@@ -732,12 +733,33 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
                         <span className="text-sm font-medium break-words" style={{ color: "var(--text-primary)" }}>
                           🎲 {g.name}
                         </span>
-                        {g.plays.length > 0 && (
+                        {(isCreator || isAdmin || isAttending) && (
+                          g.plays.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => setLoggingPlayId(g.id)}
+                              className="text-xs font-semibold px-1.5 py-0.5 rounded-full hover:opacity-75 transition-opacity"
+                              style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}
+                            >
+                              ✓ {g.plays.length}×
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setLoggingPlayId(g.id)}
+                              className="text-xs hover:underline"
+                              style={{ color: "var(--text-muted)" }}
+                            >
+                              + log play
+                            </button>
+                          )
+                        )}
+                        {!(isCreator || isAdmin || isAttending) && g.plays.length > 0 && (
                           <span
                             className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
                             style={{ backgroundColor: "var(--success-light)", color: "var(--success)" }}
                           >
-                            ✓ Played {g.plays.length}×
+                            ✓ {g.plays.length}×
                           </span>
                         )}
                       </div>
@@ -748,41 +770,46 @@ export function GamesSection({ eventId, games, userId, isPast, isAdmin, isCreato
                         )}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {(isCreator || isAdmin || isAttending) && (
+                    {!isPast && (g.userId === userId || isAdmin) && (
+                      <div className="relative shrink-0">
                         <button
                           type="button"
-                          onClick={() => setLoggingPlayId(loggingPlayId === g.id ? null : g.id)}
-                          className="text-xs font-medium hover:underline transition-colors"
-                          style={{ color: "var(--accent)" }}
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === g.id ? null : g.id); }}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-sm hover:opacity-70 transition-opacity"
+                          style={{ color: "var(--text-muted)", backgroundColor: "var(--border-light)" }}
+                          title="More options"
                         >
-                          {g.plays.length > 0 ? `+${g.plays.length} play${g.plays.length > 1 ? "s" : ""}` : "+ Log a play"}
+                          ···
                         </button>
-                      )}
-                      {!isPast && (g.userId === userId || isAdmin) && (
-                        <>
-                          {g.userId === userId && (
-                            <button
-                              type="button"
-                              onClick={() => setEditingId(g.id)}
-                              className="text-xs font-medium hover:underline"
-                              style={{ color: "var(--text-secondary)" }}
-                            >
-                              Edit
-                            </button>
-                          )}
-                          <form action={removeGame.bind(null, g.id, eventId)}>
-                            <button
-                              type="submit"
-                              className="text-xs font-medium transition-colors hover:underline"
-                              style={{ color: "var(--danger)" }}
-                            >
-                              Remove
-                            </button>
-                          </form>
-                        </>
-                      )}
-                    </div>
+                        {openMenuId === g.id && (
+                          <div
+                            className="absolute right-0 top-full mt-1 z-40 rounded-lg shadow-lg py-1 min-w-[120px]"
+                            style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {g.userId === userId && (
+                              <button
+                                type="button"
+                                onClick={() => { setEditingId(g.id); setOpenMenuId(null); }}
+                                className="w-full text-left px-3 py-2 text-xs hover:opacity-70 transition-opacity"
+                                style={{ color: "var(--text-secondary)" }}
+                              >
+                                Edit name
+                              </button>
+                            )}
+                            <form action={removeGame.bind(null, g.id, eventId)}>
+                              <button
+                                type="submit"
+                                className="w-full text-left px-3 py-2 text-xs hover:opacity-70 transition-opacity"
+                                style={{ color: "var(--danger)" }}
+                              >
+                                Remove
+                              </button>
+                            </form>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
               </li>
