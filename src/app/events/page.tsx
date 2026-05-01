@@ -73,14 +73,36 @@ export default async function EventsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
-            Events
-          </h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>
-            {happening.length > 0 ? `${happening.length} happening now · ` : ""}{upcoming.length} upcoming
-          </p>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+              Events
+            </h1>
+            <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>
+              {happening.length > 0 ? `${happening.length} happening now · ` : ""}{upcoming.length} upcoming
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Your clubs:</span>
+          {userClubs.map((club) => (
+            <Link
+              key={club.id}
+              href="/clubs"
+              className="text-xs font-medium px-3 py-1 rounded-full transition-opacity hover:opacity-75"
+              style={{ backgroundColor: "var(--purple-light)", color: "var(--purple)" }}
+            >
+              {club.name}
+            </Link>
+          ))}
+          <Link
+            href="/clubs"
+            className="text-xs hover:underline"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Manage
+          </Link>
         </div>
       </div>
 
